@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Game Completionist</string>
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="platform_id">PlatformID</string>
+    <string name="order_type">orderType</string>
+    <string name="filter_type">filterType</string>
+
+
+    <string-array name="platforms">
+        <item>Steam</item>
+    </string-array>
+    <string-array name="order_types">
+        <item>Name (Ascending)</item>
+        <item>Name (Descending)</item>
+        <item>Hours Played (Least to Most)</item>
+        <item>Hours Played (Most to Least)</item>
+        <item>Recently Played (Least to Most)</item>
+        <item>Recently Played (Most to Least)</item>
+        <item>Purchase Date? (Newest First)</item>
+        <item>Purchase Date? (Oldest First)</item>
+    </string-array>
+
+    <string-array name="filter_types">
+        <item>Unfinished</item>
+        <item>Finished</item>
+        <item>100% Complete</item>
+    </string-array>
+</resources>
