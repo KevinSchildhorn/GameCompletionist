@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.ExecutionException;
 
 /**
  * SCM Products Inc.
@@ -31,16 +32,14 @@ import java.io.InputStreamReader;
  */
 
 public class HTTPRequestHandler{
-    private HTTPReplyHandler replyHandler;
 
-    public HTTPRequestHandler (HTTPReplyHandler event){
-        replyHandler = event;
+
+    public HTTPRequestHandler (){
     }
-
 
     // Requests
 
-    public void requestGameList(Platform platform){
+    public JSONObject requestGameList(Platform platform) throws JSONException, ExecutionException, InterruptedException {
         String requestURI = "";
 
         switch (platform.getTypeID()){
@@ -49,14 +48,18 @@ public class HTTPRequestHandler{
                 break;
         }
         //if(isConnected()) {
-            new HttpAsyncTask().execute(requestURI,"Game");
+        JSONObject gameListJSON = new HttpAsyncTask().execute(requestURI).get();
+        return gameListJSON.getJSONObject("response");
         //}
     }
-    public void requestSteamID(Platform platform) {
+    public String requestSteamID(Platform platform) throws JSONException, ExecutionException, InterruptedException {
 
         String requestURI = String.format("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=%s&vanityurl=%s",platform.getAPIkey(),platform.getLogin());
         //if(isConnected()) {
-            new HttpAsyncTask().execute(requestURI,"SteamID");
+        JSONObject steamIDJSON = new HttpAsyncTask().execute(requestURI).get();
+        steamIDJSON = steamIDJSON.getJSONObject("response");
+        String steamID = steamIDJSON.getString("steamid");
+        return steamID;
         //}
     }
     public void requestAchievements(Platform platform, Game game) {
@@ -69,33 +72,14 @@ public class HTTPRequestHandler{
 
     // Processing
 
-    private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+    private class HttpAsyncTask extends AsyncTask<String, Void, JSONObject> {
         @Override
-        protected String doInBackground(String... urls) {
+        protected JSONObject doInBackground(String... urls) {
             JSONObject jsonTemp = sendRequest(urls[0]);
 
-
             // if the request isn't null, determine the type of incoming message
-            if(jsonTemp != null && urls[1] != null) {
-                if(urls[1] == "Game") {
-                    try {
-                        jsonTemp = jsonTemp.getJSONObject("response");
-                        replyHandler.incomingSteamGameList(jsonTemp);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-                if(urls[1] == "SteamID") {
-                    String steamID = null;
-                    try {
-                        jsonTemp = jsonTemp.getJSONObject("response");
-                        steamID = jsonTemp.getString("steamid");
-                        replyHandler.incomingSteamID(steamID);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
+            if(jsonTemp != null) {
+                return jsonTemp;
             }
             return null;
         }

@@ -40,11 +40,10 @@ import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
 
 import java.util.ArrayList;
 
-import static com.kevinschildhorn.gamecompletionist.R.drawable.selection;
-
 
 public class MainActivity extends Activity  implements  NavigationDrawerFragment.NavigationDrawerCallbacks,
-                                                        PlaceholderFragment.PlaceholderCallbacks{
+                                                        PlaceholderFragment.PlaceholderCallbacks,
+                                                        PlatformHandler.PlatformGeneratorCallbacks{
 
     // Fragments
     private NavigationDrawerFragment mNavigationDrawerFragment;
@@ -52,6 +51,9 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
     // last screen title
     private CharSequence mTitle;
+
+    // Platform Generator
+    PlatformHandler mPlatformHandler;
 
     SQLiteHelper db;
 
@@ -74,29 +76,13 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
-
-
-        if (newPlatformReceiver != null) {
-            IntentFilter intentFilter = new IntentFilter(getString(R.string.new_platform_receiver));
-            this.registerReceiver(newPlatformReceiver, intentFilter);
-        }
-
-        if (updatePlatformReceiver != null) {
-            IntentFilter intentFilter = new IntentFilter(getString(R.string.updated_platform_receiver));
-            this.registerReceiver(updatePlatformReceiver, intentFilter);
-        }
-
+        mPlatformHandler = new PlatformHandler(this,this);
         // Pull any new games from platform
         Platform platformTemp;
         for(int i=0;i<platformArray.size();i++){
             platformTemp = (Platform)platformArray.get(i);
-            platformTemp.requestGameList();
+            mPlatformHandler.RequestUpdatedGameListFromServer(platformTemp);
         }
-    }
-
-    @Override
-    protected void onDestroy (){
-        this.unregisterReceiver(newPlatformReceiver);
     }
 
     @Override
@@ -210,6 +196,12 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         dialog.show();
     }
 
+    @Override
+    public void requestNewPlatform(int platformType, String text) {
+        mPlatformHandler.RequestNewPlatformFromServer(platformType,text);
+        mPlaceholderFragment.setLoadingScreen(true);
+    }
+
 
     // Action Bar
 
@@ -241,12 +233,6 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
     }
-
-    @Override
-    public void onNewPlatformEntered(){
-        mPlaceholderFragment.setLoadingScreen(true);
-    }
-
 
     // Options
 
@@ -293,4 +279,30 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         return super.onOptionsItemSelected(item);
     }
 
+
+    // Platform Handler Callbacks
+
+    @Override
+    public void onNewIncomingPlatform(Platform platform){
+        mNavigationDrawerFragment.updatePlatforms(true);
+        mPlaceholderFragment.updatePlatform();
+    }
+
+    @Override
+    public void onUpdatedIncomingPlatform(Platform platform,ArrayList<Game> games){
+        mNavigationDrawerFragment.updatePlatforms(false);
+        mPlaceholderFragment.updatePlatform();
+
+        String gamesString = "";
+        for (int i=0;i<games.size();i++){
+            gamesString += "\n  -" + games.get(i).getName();
+        }
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("New Games Found")
+                .setMessage("New Games were found for this platform" + gamesString)
+                .setNegativeButton("Ok", null);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 }

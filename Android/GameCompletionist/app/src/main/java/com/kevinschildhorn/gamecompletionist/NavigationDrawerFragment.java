@@ -40,7 +40,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class NavigationDrawerFragment extends Fragment implements Platform.PlatformCallbacks {
+public class NavigationDrawerFragment extends Fragment {
     private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
 
@@ -224,10 +224,8 @@ public class NavigationDrawerFragment extends Fragment implements Platform.Platf
 
                         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-
                                 // hold as temporary object
-                                createNewPlatform(platformIdx+1,input.getText().toString());
-
+                                mCallbacks.requestNewPlatform(platformIdx+1,input.getText().toString());
                             }
                         });
 
@@ -245,14 +243,16 @@ public class NavigationDrawerFragment extends Fragment implements Platform.Platf
         dialog.show();
     }
 
-    public void createNewPlatform(int id,String text){
-        new Platform(this,getActivity(),-1,id, text);
-        mCallbacks.onNewPlatformEntered();
-    }
-
-    public void OnUpdatePlatformReceived(Context context){
+    public void updatePlatforms(boolean updateTitle){
         // get new platforms
         platforms = mCallbacks.getDatabase().getPlatforms();
+
+        // set actionBar title
+        if(updateTitle) {
+            ActionBar actionBar = getActivity().getActionBar();
+            Platform platformTemp = platforms.get(platforms.size() - 1);
+            actionBar.setTitle(platformTemp.getName());
+        }
 
         refreshDrawer();
     }
@@ -284,33 +284,6 @@ public class NavigationDrawerFragment extends Fragment implements Platform.Platf
 
         }
 
-    }
-
-    @Override
-    public void onNewIncomingPlatform(Platform platform){
-        // get new platforms
-        platforms = mCallbacks.getDatabase().getPlatforms();
-
-        // set actionBar title
-        ActionBar actionBar = getActivity().getActionBar();
-        Platform platformTemp = platforms.get(platforms.size() - 1);
-        actionBar.setTitle(platformTemp.getName());
-
-        refreshDrawer();
-    }
-
-    @Override
-    public void onUpdatedIncomingPlatform(Platform platform,ArrayList<Game> games){
-        String gameNames = "";
-        for (int i=0;i<games.size();i++){
-            gameNames += games.get(i).getName() + "\n";
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("New games added to your list")
-                .setMessage("New games were added to your platform:\n" + gameNames)
-                .setNegativeButton("Ok",null);
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
 
     public String getListItemName(int ListIndex){
@@ -435,7 +408,7 @@ public class NavigationDrawerFragment extends Fragment implements Platform.Platf
         void onSortDirectionSelected(boolean sortAsc);
         void onPlatformDeleteSelected();
         void onPlatformRenameSelected();
-        void onNewPlatformEntered();
+        void requestNewPlatform(int platformType,String text);
         SQLiteHelper getDatabase();
     }
 }
