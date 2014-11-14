@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/unselectAll"
+        android:title="Unselect All"
+        android:icon="@drawable/ic_check_box_outline_blank_white_24dp"
+        android:showAsAction="ifRoom" />
+
+    <item android:id="@+id/selectAll"
+        android:title="Select All"
+        android:icon="@drawable/ic_check_box_white_24dp"
+        android:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/cancel"
+        android:title="test"
+        android:icon="@drawable/ic_highlight_remove_white_24dp"
+        android:showAsAction="ifRoom" />
+
+</menu>

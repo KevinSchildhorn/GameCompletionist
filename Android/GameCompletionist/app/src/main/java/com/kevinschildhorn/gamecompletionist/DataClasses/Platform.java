@@ -3,10 +3,13 @@ package com.kevinschildhorn.gamecompletionist.DataClasses;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.HTTP.HTTPReplyHandler;
 import com.kevinschildhorn.gamecompletionist.HTTP.HTTPRequestHandler;
+import com.kevinschildhorn.gamecompletionist.R;
 import com.kevinschildhorn.gamecompletionist.SQLiteHelper;
 
 
@@ -14,6 +17,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -35,16 +39,20 @@ public class Platform implements HTTPReplyHandler{
     private String APIkey;
     private Game[] games;
 
+    //private Context context;
     private Context context;
     private HTTPRequestHandler requestHandler;
+    private PlatformCallbacks mCallback;
 
     // New Platform
-    public Platform (Context context,int incomingID, int incomingType,String incomingLogin){
+    public Platform (PlatformCallbacks callbacks,Context context, int incomingID, int incomingType,String incomingLogin){
+        mCallback = callbacks;
         this.context = context;
         // initialize
         this.id = incomingID;
         this.login = incomingLogin;
         this.typeID = incomingType;
+
 
         if(incomingID == -1){
             SQLiteHelper db = new SQLiteHelper(context);
@@ -53,7 +61,7 @@ public class Platform implements HTTPReplyHandler{
         // initialize based on platform type
         switch (this.typeID){
             case 1:
-                this.name = "Steam";
+                this.name = getUniqueName("Steam");
                 this.APIkey = "B6D54D6EBCF3A1A320644C485ACD1A6F";
 
                 // fetch login ID
@@ -76,7 +84,24 @@ public class Platform implements HTTPReplyHandler{
         this.games = gameArray;
     }
 
+    // Checks if name already exists in database and if so returns a custom one
+    private String getUniqueName(String name){
+        int nameCount = 0;
+        SQLiteHelper db = new SQLiteHelper(context);
+        ArrayList<String> existingNames = db.getPlatformNames();
 
+        for(int i=0;i<existingNames.size();i++){
+            if(existingNames.get(i).startsWith(name)){
+                nameCount++;
+            }
+        }
+        if(nameCount == 0){
+            return name;
+        }
+        else{
+            return name + " " + nameCount+1;
+        }
+    }
     // Getters
 
 
@@ -89,7 +114,7 @@ public class Platform implements HTTPReplyHandler{
     public String getName () {
         return this.name;
     }
-    public int getId(){
+    public int getID(){
         return this.id;
     }
     public String getLogin(){
@@ -102,18 +127,20 @@ public class Platform implements HTTPReplyHandler{
         return  this.APIkey;
     }
 
-
+    public void setName (String incomingName) {
+        this.name = incomingName;
+    }
     // Modify Games
 
-    public Platform orderPlatformGames(int orderType,Context cont){
+    public Platform sortPlatformGames(int sortType,Context cont){
         SQLiteHelper db = new SQLiteHelper(cont);
-        ArrayList<Game> gameList = db.getGames(this.id,orderType,1);
+        ArrayList<Game> gameList = db.getGames(this.id,sortType,1,true);
         this.games = gameList.toArray(new Game[gameList.size()]);
         return this;
     }
     public Platform filterPlatformGames(int completionType,Context cont){
         SQLiteHelper db = new SQLiteHelper(cont);
-        ArrayList<Game> gameList = db.getGames(this.id,completionType,1);
+        ArrayList<Game> gameList = db.getGames(this.id,completionType,1,true);
         this.games = gameList.toArray(new Game[gameList.size()]);
         return this;
     }
@@ -124,56 +151,85 @@ public class Platform implements HTTPReplyHandler{
     public void incomingSteamID(String steamID){
         // we just got the steamID so now get all the games
         this.login = steamID;
+        requestGameList();
+    }
+    public void  requestGameList(){
         requestHandler.requestGameList(this);
     }
     public void incomingSteamGameList(JSONObject gameList) throws JSONException {
 
-        // Find the game count
+        int currentGameCount = this.games.length;
         int gameCount = gameList.getInt("game_count");
-        this.games = new Game[gameCount];
 
-        // Get game information
-        JSONArray gameInfoArray = gameList.getJSONArray("games");
-        JSONObject gameInfoTemp;
+        if(currentGameCount != gameCount) {
+            Game[] oldGames = this.games;
+            ArrayList<Game> updatedGames = new ArrayList<Game>();
 
-        Game gameTemp;
-        int recent;
-        SQLiteHelper db = new SQLiteHelper(context);
+            this.games = new Game[gameCount];
 
-        // Pull data from JSON
-        for(int i=0;i<gameCount;i++){
-            gameInfoTemp = gameInfoArray.getJSONObject(i);
-            recent = -1;
-            try {
-                recent = gameInfoTemp.getInt("playtime_2weeks");
-            } catch (JSONException e) {
-                e.printStackTrace();
+            // Get game information
+            JSONArray gameInfoArray = gameList.getJSONArray("games");
+            JSONObject gameInfoTemp;
+
+            Game gameTemp;
+            int recent;
+            SQLiteHelper db = new SQLiteHelper(context);
+
+            // Pull data from JSON
+            for (int i = 0; i < gameCount; i++) {
+                gameInfoTemp = gameInfoArray.getJSONObject(i);
+                recent = -1;
+                try {
+                    recent = gameInfoTemp.getInt("playtime_2weeks");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                gameTemp = new Game(gameInfoTemp.getInt("appid"),               // ID
+                        gameInfoTemp.getString("name"),             // Name
+                        this.id,                                    // platformID
+                        gameInfoTemp.getString("img_logo_url"),     // LogoURL
+                        gameInfoTemp.getInt("playtime_forever"),    // HoursPlayed
+                        recent,                                     // lastTimePlayed
+                        -1,                                         // AchievementCount
+                        0,                                          // CompletionStatus
+                        -1);                                        // CustomSortIndex
+
+                for (int j=0;j<oldGames.length;j++){
+                    if(gameTemp.getName() != oldGames[j].getName()){
+                        updatedGames.add(gameTemp);
+                    }
+                }
+                this.games[i] = gameTemp;
+                if (db.addGame(gameTemp) == -1) {
+                    Toast.makeText(context, "Inserting Game Failed", Toast.LENGTH_SHORT);
+                }
             }
 
-            gameTemp = new Game(gameInfoTemp.getInt("appid"),               // ID
-                                gameInfoTemp.getString("name"),             // Name
-                                this.id,                                    // platformID
-                                gameInfoTemp.getString("img_logo_url"),     // LogoURL
-                                gameInfoTemp.getInt("playtime_forever"),    // HoursPlayed
-                                recent,                                     // lastTimePlayed
-                                -1,                                         // AchievementCount
-                                0,                                          // CompletionStatus
-                                -1);                                        // CustomOrderIndex
+            db.addPlatform(this);
 
-            this.games[i] = gameTemp;
-            db.addGame(gameTemp);
+            SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(context);
+            SharedPreferences.Editor edit = m_settingsSP.edit();
+            edit.putInt(SQLiteHelper.KEY_PLATFORMID, this.id);
+            edit.commit();
+
+            // Send broadcast if this is a new platform
+            if(currentGameCount == 0) {
+                mCallback.onNewIncomingPlatform(this);
+            }
+
+            // Send Broadcast if this is an updated platform
+            if(currentGameCount != 0){
+                mCallback.onUpdatedIncomingPlatform(this,updatedGames);
+            }
         }
-
-        db.addPlatform(this);
-
-        SharedPreferences m_settingsSP = context.getSharedPreferences("MyPreferences", context.MODE_MULTI_PROCESS);
-        SharedPreferences.Editor edit = m_settingsSP.edit();
-        edit.putInt(SQLiteHelper.KEY_PLATFORMID,this.id);
-        edit.commit();
-
-        Intent actionIntent = new Intent();
-        actionIntent.setAction("updateListView");
-        context.sendBroadcast(actionIntent);
+    }
+    public static interface PlatformCallbacks {
+        /**
+         * Called when an item in the navigation drawer is selected.
+         */
+        void onNewIncomingPlatform(Platform platform);
+        void onUpdatedIncomingPlatform(Platform platform,ArrayList<Game> games);
     }
 }
 

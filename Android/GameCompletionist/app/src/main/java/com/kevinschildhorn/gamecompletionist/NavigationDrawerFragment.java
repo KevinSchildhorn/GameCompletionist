@@ -5,9 +5,12 @@ import android.app.Activity;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -30,33 +33,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 
+import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public class NavigationDrawerFragment extends Fragment {
-
-    /**
-     * Remember the position of the selected item.
-     */
+public class NavigationDrawerFragment extends Fragment implements Platform.PlatformCallbacks {
     private static final String STATE_SELECTED_POSITION = "selected_navigation_drawer_position";
-
-    /**
-     * Per the design guidelines, you should show the drawer on launch until the user manually
-     * expands it. This shared preference tracks this.
-     */
     private static final String PREF_USER_LEARNED_DRAWER = "navigation_drawer_learned";
 
-    /**
-     * A pointer to the current callbacks instance (the Activity).
-     */
     private NavigationDrawerCallbacks mCallbacks;
-
-    /**
-     * Helper component that ties the action bar to the navigation drawer.
-     */
     private ActionBarDrawerToggle mDrawerToggle;
 
     private DrawerLayout mDrawerLayout;
@@ -66,6 +54,8 @@ public class NavigationDrawerFragment extends Fragment {
     private int mCurrentSelectedPosition = 0;
     private boolean mFromSavedInstanceState;
     private boolean mUserLearnedDrawer;
+
+    SharedPreferences sp;
 
     private ArrayList<Platform> platforms = new ArrayList<Platform>();
 
@@ -78,24 +68,22 @@ public class NavigationDrawerFragment extends Fragment {
 
         // Read in the flag indicating whether or not the user has demonstrated awareness of the
         // drawer. See PREF_USER_LEARNED_DRAWER for details.
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
         mUserLearnedDrawer = sp.getBoolean(PREF_USER_LEARNED_DRAWER, false);
 
         if (savedInstanceState != null) {
-            mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
+            //mCurrentSelectedPosition = savedInstanceState.getInt(STATE_SELECTED_POSITION);
             mFromSavedInstanceState = true;
         }
 
-        // Select either the default item (0) or the last selected item.
-        selectItem(mCurrentSelectedPosition);
-
-
+        // Get the last selected Drawer Item
+        mCurrentSelectedPosition = sp.getInt("drawerPosition",0);
     }
 
     @Override
     public void onActivityCreated (Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        // Indicate that this fragment would like to influence the set of actions in the action bar.
         setHasOptionsMenu(true);
     }
 
@@ -108,17 +96,16 @@ public class NavigationDrawerFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                TextView temp = (TextView)view.findViewById(android.R.id.text1);
+                TextView temp = (TextView)view.findViewById(R.id.firstLine);
                 selectItem(position);
 
                 // If you are adding a new platform
-                if(temp.getText() == "+ Add Platform"){
+                if(temp.getText() == getString(R.string.add_platform)){
                     addPlatform();
                 }
             }
         });
-        refreshDrawer();
-        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
+
         return mDrawerListView;
     }
 
@@ -198,12 +185,16 @@ public class NavigationDrawerFragment extends Fragment {
         });
         mDrawerLayout.setDrawerListener(mDrawerToggle);
 
-
         platforms = incomingPlatforms;
         refreshDrawer();
+        selectItem(mCurrentSelectedPosition);
+
+        mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
     }
 
     private void selectItem(int position) {
+        sp.edit().putInt("drawerPosition",position).apply();
+
         mCurrentSelectedPosition = position;
 
         if (mDrawerListView != null) {
@@ -235,7 +226,8 @@ public class NavigationDrawerFragment extends Fragment {
                             public void onClick(DialogInterface dialog, int whichButton) {
 
                                 // hold as temporary object
-                                new Platform(builder.getContext(),-1,platformIdx+1, input.getText().toString());
+                                createNewPlatform(platformIdx+1,input.getText().toString());
+
                             }
                         });
 
@@ -253,37 +245,72 @@ public class NavigationDrawerFragment extends Fragment {
         dialog.show();
     }
 
+    public void createNewPlatform(int id,String text){
+        new Platform(this,getActivity(),-1,id, text);
+        mCallbacks.onNewPlatformEntered();
+    }
+
+    public void OnUpdatePlatformReceived(Context context){
+        // get new platforms
+        platforms = mCallbacks.getDatabase().getPlatforms();
+
+        refreshDrawer();
+    }
 
     public void refreshDrawer(){
         if(mDrawerListView != null && platforms != null) {
             ArrayList<String> drawerStrings = new ArrayList<String>();
 
-            drawerStrings.add("All");
-            drawerStrings.add("Unfinished");
-            drawerStrings.add("Finished");
-            drawerStrings.add("100% Complete");
+            drawerStrings.add(getString(R.string.all));
+            drawerStrings.add(getString(R.string.unfinished));
+            drawerStrings.add(getString(R.string.finished));
+            drawerStrings.add(getString(R.string.complete));
 
             Platform platformTemp;
             for (int i=0;i<platforms.size();i++){
                 platformTemp = platforms.get(i);
                 drawerStrings.add(platformTemp.getName());
-                drawerStrings.add("All");
-                drawerStrings.add("Unfinished");
-                drawerStrings.add("Finished");
-                drawerStrings.add("100% Complete");
+                drawerStrings.add(getString(R.string.unfinished));
+                drawerStrings.add(getString(R.string.finished));
+                drawerStrings.add(getString(R.string.complete));
             }
-            drawerStrings.add("+ Add Platform");
+            drawerStrings.add(getString(R.string.add_platform));
 
             String[] arr = drawerStrings.toArray(new String[drawerStrings.size()]);
 
-            mDrawerListView.setAdapter(new ArrayAdapter<String>(
+            mDrawerListView.setAdapter(new PlatformArrayAdapter(
                     getActionBar().getThemedContext(),
-                    android.R.layout.simple_list_item_activated_1,
-                    android.R.id.text1,
                     arr));
 
-
         }
+
+    }
+
+    @Override
+    public void onNewIncomingPlatform(Platform platform){
+        // get new platforms
+        platforms = mCallbacks.getDatabase().getPlatforms();
+
+        // set actionBar title
+        ActionBar actionBar = getActivity().getActionBar();
+        Platform platformTemp = platforms.get(platforms.size() - 1);
+        actionBar.setTitle(platformTemp.getName());
+
+        refreshDrawer();
+    }
+
+    @Override
+    public void onUpdatedIncomingPlatform(Platform platform,ArrayList<Game> games){
+        String gameNames = "";
+        for (int i=0;i<games.size();i++){
+            gameNames += games.get(i).getName() + "\n";
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("New games added to your list")
+                .setMessage("New games were added to your platform:\n" + gameNames)
+                .setNegativeButton("Ok",null);
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     public String getListItemName(int ListIndex){
@@ -336,8 +363,25 @@ public class NavigationDrawerFragment extends Fragment {
             return true;
         }
 
-        if (item.getItemId() == R.id.action_sort) {
+        if (item.getItemId() == R.id.action_edit) {
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_change_direction) {
+            reverseSortDirection();
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_sort) {
             selectSortType();
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_rename) {
+            mCallbacks.onPlatformRenameSelected();
+            platforms = mCallbacks.getDatabase().getPlatforms();
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_delete) {
+            mCallbacks.onPlatformDeleteSelected();
+            platforms = mCallbacks.getDatabase().getPlatforms();
             return true;
         }
 
@@ -347,16 +391,23 @@ public class NavigationDrawerFragment extends Fragment {
     public void selectSortType(){
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Sort By")
-                .setItems(R.array.order_types, new DialogInterface.OnClickListener() {
+                .setItems(R.array.sort_types, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, final int sortType) {
                         if (mCallbacks != null) {
-                            mCallbacks.onSortOrderSelected(sortType);
+                            mCallbacks.onSortTypeSelected(sortType);
                         }
                     }});
         AlertDialog dialog = builder.create();
         dialog.show();
     }
 
+    public void reverseSortDirection(){
+        SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        boolean sortDirectionAsc = m_settingsSP.getBoolean(getString(R.string.sort_Direction),true);
+        if (mCallbacks != null) {
+            mCallbacks.onSortDirectionSelected(!sortDirectionAsc);
+        }
+    }
     /**
      * Per the navigation drawer design guidelines, updates the action bar to show the global app
      * 'context', rather than just what's in the current screen.
@@ -365,7 +416,7 @@ public class NavigationDrawerFragment extends Fragment {
         ActionBar actionBar = getActionBar();
         actionBar.setDisplayShowTitleEnabled(true);
         //actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setTitle(R.string.app_name);
+        actionBar.setTitle("Platforms");
     }
 
     private ActionBar getActionBar() {
@@ -380,7 +431,12 @@ public class NavigationDrawerFragment extends Fragment {
          * Called when an item in the navigation drawer is selected.
          */
         void onNavigationDrawerItemSelected(int position);
-        void onSortOrderSelected(int sortType);
+        void onSortTypeSelected(int sortType);
+        void onSortDirectionSelected(boolean sortAsc);
+        void onPlatformDeleteSelected();
+        void onPlatformRenameSelected();
+        void onNewPlatformEntered();
+        SQLiteHelper getDatabase();
     }
 }
 

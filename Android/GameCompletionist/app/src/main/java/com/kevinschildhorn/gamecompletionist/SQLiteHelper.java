@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
@@ -38,7 +39,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     public static final String KEY_RECENTMINUTESPLAYED = "recentMinutesPlayed";
     public static final String KEY_ACHIEVEMENTCOUNT = "AchievementCount";
     public static final String KEY_COMPLETIONSTATUS = "CompletionStatus";
-    public static final String KEY_CUSTOMORDERINDEX = "CustomOrderIndex";
+    public static final String KEY_CUSTOMSORTINDEX = "CustomSortIndex";
 
 
     public SQLiteHelper(Context context) {
@@ -64,7 +65,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_RECENTMINUTESPLAYED + " INT," +
                 KEY_ACHIEVEMENTCOUNT + " INT," +
                 KEY_COMPLETIONSTATUS + " INT," +
-                KEY_CUSTOMORDERINDEX + " INT" +
+                KEY_CUSTOMSORTINDEX + " INT" +
                 ")";
 
         db.execSQL(CREATE_PLATFORM_TABLE);
@@ -84,13 +85,12 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     // Platform
 
     public void addPlatform(Platform platform) {
-
         SQLiteDatabase db = this.getWritableDatabase();
 
 
         ContentValues values = new ContentValues();
-        values.put(KEY_ID, platform.getId());
-        values.put(KEY_NAME, platform.getName());
+        values.put(KEY_ID, platform.getID());
+        values.put(KEY_NAME, "'" + platform.getName() + "'");
         values.put(KEY_LOGIN, platform.getLogin());
         values.put(KEY_TYPEID, platform.getTypeID());
         values.put(KEY_APIKEY, platform.getAPIkey());
@@ -98,35 +98,32 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         db.insert(TABLE_PLATFORM,null,values);
         db.close();
     }
+    public void removePlatform(Platform platform) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        // delete games
+        db.delete(TABLE_GAMES,
+                KEY_PLATFORMID + " =?",
+                new String[]{platform.getID() + ""});
+
+        // delete platform
+        db.delete(TABLE_PLATFORM,
+                KEY_ID + " =?",
+                new String[]{platform.getID() + ""});
+
+        db.close();
+    }
+
     public ArrayList getPlatforms(){
-        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor curTemp = test(-1);
 
-        String[] projection = {
-                KEY_ID,
-                KEY_NAME,
-                KEY_LOGIN,
-                KEY_TYPEID,
-                KEY_APIKEY
-        };
-
-        String sortOrder = KEY_ID + " ASC";
-
-        Cursor curTemp = db.query(
-                TABLE_PLATFORM,  // The table to query
-                projection,                                 // The columns to return
-                null,                                       // The columns for the WHERE clause
-                null,                                       // The values for the WHERE clause
-                null,                                       // don't group the rows
-                null,                                       // don't filter by row groups
-                sortOrder                                   // The sort order
-        );
 
         Platform platformTemp;
         ArrayList platformArray = new ArrayList();
         for (int i = 0; i < curTemp.getCount(); i++) {
             curTemp.moveToFirst();
 
-            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),-1,1);
+            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),-1,1,true);
 
             platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
@@ -141,7 +138,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         }
         return  platformArray;
     }
-    public Platform getPlatform(int ID,int orderType,int filterType){
+
+    Cursor test(int ID){
         SQLiteDatabase db = this.getReadableDatabase();
 
         String[] projection = {
@@ -151,25 +149,31 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_TYPEID,
                 KEY_APIKEY
         };
-
-        String whereColumn = KEY_ID + "=" + ID;
-
-
+        String whereColumn = null;
+        if(ID > 0){
+            whereColumn = KEY_ID + "=" + ID;
+        }
         Cursor curTemp = db.query(
                 TABLE_PLATFORM,  // The table to query
                 projection,                                 // The columns to return
                 whereColumn,                                // The columns for the WHERE clause
-                null,                                 // The values for the WHERE clause
+                null,                                       // The values for the WHERE clause
                 null,                                       // don't group the rows
                 null,                                       // don't filter by row groups
-                null                                   // The sort order
+                null                                         // The sort Type
         );
+        return curTemp;
+    }
+
+
+    public Platform getPlatform(int ID,int sortType,int filterType,boolean sortAscending){
+        Cursor curTemp = test(ID);
 
         Platform platformTemp;
 
         if(curTemp.getCount() > 0) {
             curTemp.moveToFirst();
-            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),filterType,orderType);
+            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),filterType,sortType,sortAscending);
 
             platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
@@ -177,9 +181,27 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                     curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_TYPEID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_APIKEY)),
                     gamesTemp);
+
             return platformTemp;
         }
         return null;
+    }
+    public void setPlatform(Platform platform){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // New value for one column
+        ContentValues values = new ContentValues();
+        values.put(KEY_NAME, platform.getName());
+
+        // Which row to update, based on the ID
+        String selection = KEY_ID + " LIKE ?";
+        String[] selectionArgs = { platform.getID() + "" };
+
+        int count = db.update(
+                TABLE_GAMES,
+                values,
+                selection,
+                selectionArgs);
     }
     public int getPlatformCount(){
         String countQuery = "SELECT  * FROM " + TABLE_PLATFORM;
@@ -190,10 +212,24 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         return cnt;
     }
 
+    public ArrayList<String> getPlatformNames(){
+        String countQuery = "SELECT " + KEY_NAME +" FROM " + TABLE_PLATFORM;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(countQuery, null);
+        cursor.moveToFirst();
+        ArrayList<String> names = new ArrayList<String>();
+        for(int i=0;i<cursor.getCount();i++){
+            names.add(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        return names;
+    }
+
 
     // Games
 
-    public void addGame(Game game) {
+    public long addGame(Game game) {
 
         SQLiteDatabase db = this.getWritableDatabase();
 
@@ -203,16 +239,18 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_NAME, game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
         values.put(KEY_LOGOURL, game.getLogoURL());
-        values.put(KEY_MINUTESPLAYED, game.getHoursPlayed());
+        values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
         values.put(KEY_ACHIEVEMENTCOUNT, game.getAchievementCount());
         values.put(KEY_COMPLETIONSTATUS, game.completionStatus);
-        values.put(KEY_CUSTOMORDERINDEX, game.customOrderIndex);
+        values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
 
-        db.insert(TABLE_GAMES,null,values);
+        long result = db.insert(TABLE_GAMES,null,values);
+
         db.close();
+        return result;
     }
-    public ArrayList getGames(int platformID,int filterType,int orderType){
+    public ArrayList getGames(int platformID,int filterType,int sortType,boolean sortAscending){
         SQLiteDatabase db = this.getReadableDatabase();
 
         String[] columns = {
@@ -224,42 +262,40 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_RECENTMINUTESPLAYED,
                 KEY_ACHIEVEMENTCOUNT,
                 KEY_COMPLETIONSTATUS,
-                KEY_CUSTOMORDERINDEX
+                KEY_CUSTOMSORTINDEX
         };
 
         String selection = "";
         if(platformID != -1) {
-            selection = KEY_PLATFORMID + "=" + platformID + " AND ";
+            selection = KEY_PLATFORMID + "=" + platformID;
         }
-        selection = selection + KEY_COMPLETIONSTATUS + "=" + (filterType-1);
-
-        String sortOrder;
-        switch (orderType){
+        if(filterType != -1) {
+            if(selection != ""){
+                selection = selection + " AND ";
+            }
+            selection = selection + KEY_COMPLETIONSTATUS + "=" + (filterType - 1);
+        }
+        String sortTypeText;
+        switch (sortType){
             case 0:
             default:
-                sortOrder = KEY_NAME + " ASC";
+                sortTypeText = KEY_NAME;
                 break;
             case 1:
-                sortOrder = KEY_NAME + " DESC";
+                sortTypeText = KEY_MINUTESPLAYED;
                 break;
             case 2:
-                sortOrder = KEY_MINUTESPLAYED + " ASC";
+                sortTypeText = KEY_RECENTMINUTESPLAYED;
                 break;
             case 3:
-                sortOrder = KEY_MINUTESPLAYED + " DESC";
+                sortTypeText = KEY_NAME;
                 break;
-            case 4:
-                sortOrder = KEY_RECENTMINUTESPLAYED + " ASC";
-                break;
-            case 5:
-                sortOrder = KEY_RECENTMINUTESPLAYED + " DESC";
-                break;
-            case 6:
-                sortOrder = KEY_NAME + " ASC";
-                break;
-            case 7:
-                sortOrder = KEY_NAME + " DESC";
-                break;
+        }
+        if(sortAscending){
+            sortTypeText +=" ASC";
+        }
+        else{
+            sortTypeText +=" DESC";
         }
 
 
@@ -270,7 +306,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 null,                           // The values for the WHERE clause
                 null,                                    // don't group the rows
                 null,                                    // don't filter by row groups
-                sortOrder                                // The sort order
+                sortTypeText                                // The sort order
         );
 
 
@@ -288,7 +324,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_RECENTMINUTESPLAYED)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTCOUNT)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_COMPLETIONSTATUS)),
-                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CUSTOMORDERINDEX)));
+                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CUSTOMSORTINDEX)));
 
             gameArray.add(gameTemp);
 
@@ -305,20 +341,50 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_NAME, game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
         values.put(KEY_LOGOURL, game.getLogoURL());
-        values.put(KEY_MINUTESPLAYED, game.getHoursPlayed());
+        values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
         values.put(KEY_ACHIEVEMENTCOUNT, game.getAchievementCount());
         values.put(KEY_COMPLETIONSTATUS, game.completionStatus);
-        values.put(KEY_CUSTOMORDERINDEX, game.customOrderIndex);
+        values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
 
         // Which row to update, based on the ID
         String selection = KEY_ID + " LIKE ?";
         String[] selectionArgs = { game.getID() + "" };
 
         int count = db.update(
-                TABLE_PLATFORM,
+                TABLE_GAMES,
                 values,
                 selection,
                 selectionArgs);
+    }
+    public int getGameCount(String platformName, int sortType){
+        SQLiteDatabase db;
+        String countQuery;
+        Cursor cursor;
+        int id = 0;
+        if(!platformName.equals("All")) {
+            countQuery = "SELECT " + KEY_ID + " FROM " + TABLE_PLATFORM + " WHERE " + KEY_NAME + " ='" + platformName + "'";
+            db = this.getReadableDatabase();
+            cursor = db.rawQuery(countQuery, null);
+            cursor.moveToFirst();
+            id = cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.KEY_ID));
+        }
+
+        countQuery = "SELECT  * FROM " + TABLE_GAMES;
+
+        if(id != 0){
+            countQuery += " WHERE " + KEY_PLATFORMID + " =" + id;
+            if(sortType != 0){
+                countQuery += " AND " + KEY_COMPLETIONSTATUS + " =" + sortType;
+            }
+        }
+        else if(sortType != 0){
+            countQuery += " WHERE " + KEY_COMPLETIONSTATUS + " =" + sortType;
+        }
+        db = this.getReadableDatabase();
+        cursor = db.rawQuery(countQuery, null);
+        int cnt = cursor.getCount();
+        cursor.close();
+        return cnt;
     }
 }

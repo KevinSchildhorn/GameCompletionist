@@ -16,7 +16,9 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,7 +30,9 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
@@ -39,15 +43,17 @@ import java.util.ArrayList;
 import static com.kevinschildhorn.gamecompletionist.R.drawable.selection;
 
 
-public class MainActivity extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+public class MainActivity extends Activity  implements  NavigationDrawerFragment.NavigationDrawerCallbacks,
+                                                        PlaceholderFragment.PlaceholderCallbacks{
 
     // Fragments
     private NavigationDrawerFragment mNavigationDrawerFragment;
-    private PlaceholderFragment placeholderFragment;
+    private PlaceholderFragment mPlaceholderFragment;
 
     // last screen title
     private CharSequence mTitle;
 
+    SQLiteHelper db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +65,7 @@ public class MainActivity extends Activity implements NavigationDrawerFragment.N
                 getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
 
-        SQLiteHelper db = new SQLiteHelper(this);
+        db = new SQLiteHelper(this);
         ArrayList platformArray = db.getPlatforms();
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
@@ -67,53 +73,165 @@ public class MainActivity extends Activity implements NavigationDrawerFragment.N
                 platformArray);
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
+
+
+
+        if (newPlatformReceiver != null) {
+            IntentFilter intentFilter = new IntentFilter(getString(R.string.new_platform_receiver));
+            this.registerReceiver(newPlatformReceiver, intentFilter);
+        }
+
+        if (updatePlatformReceiver != null) {
+            IntentFilter intentFilter = new IntentFilter(getString(R.string.updated_platform_receiver));
+            this.registerReceiver(updatePlatformReceiver, intentFilter);
+        }
+
+        // Pull any new games from platform
+        Platform platformTemp;
+        for(int i=0;i<platformArray.size();i++){
+            platformTemp = (Platform)platformArray.get(i);
+            platformTemp.requestGameList();
+        }
     }
 
+    @Override
+    protected void onDestroy (){
+        this.unregisterReceiver(newPlatformReceiver);
+    }
 
+    @Override
+    public SQLiteHelper getDatabase(){
+        return db;
+    }
     // Navigation Drawer Callbacks
 
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         // update the main content by replacing fragments
-        FragmentManager fragmentManager = getFragmentManager();
-        placeholderFragment = PlaceholderFragment.newInstance(position + 1);
-        fragmentManager.beginTransaction()
-                .replace(R.id.container, placeholderFragment)
-                .commit();
+
+        if(mPlaceholderFragment == null) {
+            FragmentManager fragmentManager = getFragmentManager();
+            mPlaceholderFragment = PlaceholderFragment.newInstance(position + 1);
+            fragmentManager.beginTransaction()
+                    .replace(R.id.container, mPlaceholderFragment)
+                    .commit();
+        }
+        else {
+            onSectionAttached(position + 1);
+            mPlaceholderFragment.updatePlatform();
+        }
+    }
+
+    /*private BroadcastReceiver newPlatformReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mPlaceholderFragment.updatePlatform();
+        }
+    };
+
+    private BroadcastReceiver updatePlatformReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            mNavigationDrawerFragment.OnUpdatePlatformReceived(getApplication());
+            mPlaceholderFragment.updatePlatform();
+            Toast.makeText(context,"New Games Found",Toast.LENGTH_LONG).show();
+        }
+    };*/
+
+    @Override
+    public void onSortTypeSelected(int sortType){
+        // save the sort Type
+        SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = m_settingsSP.edit();
+        editor.putInt(getString(R.string.sort_type),sortType);
+        editor.apply();
+
+        // Alert the fragment to reset the platform
+        mPlaceholderFragment.updatePlatform();
     }
 
     @Override
-    public void onSortOrderSelected(int sortType){
-        // save the order Type
-        SharedPreferences m_settingsSP = this.getSharedPreferences("MyPreferences", this.MODE_MULTI_PROCESS);
+    public void onSortDirectionSelected(boolean sortAscending){
+        // save the sort Type
+        SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = m_settingsSP.edit();
-        editor.putInt(getString(R.string.order_type),sortType);
-        editor.commit();
+        editor.putBoolean(getString(R.string.sort_Direction),sortAscending);
+        editor.apply();
 
         // Alert the fragment to reset the platform
-        placeholderFragment.updatePlatform();
+        mPlaceholderFragment.updatePlatform();
+    }
+    @Override
+   public  void onPlatformDeleteSelected(){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Are you Sure you want to delete this platform?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, final int platformIdx) {
+                        mPlaceholderFragment.deleteCurrentPlatform();
+                        mNavigationDrawerFragment.refreshDrawer();
+
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, final int platformIdx) {
+                    }
+                });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    @Override
+    public void onPlatformRenameSelected(){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Rename Your Platform");
+        builder.setIcon(R.drawable.ic_launcher);
+
+        // Set an EditText view to get user input
+        final EditText input = new EditText(builder.getContext());
+        final Platform platformTemp = mPlaceholderFragment.getCurrentPlatform();
+        input.setText(platformTemp.getName());
+        builder.setView(input);
+
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                platformTemp.setName(input.getText().toString());
+                SQLiteHelper db = new SQLiteHelper(getApplication());
+                db.setPlatform(platformTemp);
+
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
 
     // Action Bar
 
     public void onSectionAttached(int number) {
+        number = number-1;
         mTitle =  mNavigationDrawerFragment.getListItemName(number);
 
-        SharedPreferences m_settingsSP = this.getSharedPreferences("MyPreferences", this.MODE_MULTI_PROCESS);
+        SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = m_settingsSP.edit();
-        if (mTitle == "Finished"){
-            editor.putInt(getString(R.string.filter_type),1);
+        if (mTitle == getString(R.string.unfinished)){
+            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.unfinished)) + " - " + mTitle;
+            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.unfinished));
         }
-        if (mTitle == "Unfinished"){
-            editor.putInt(getString(R.string.filter_type),2);
+        else if (mTitle == getString(R.string.finished)){
+            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.finished)) + " - " + mTitle;
+            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.finished));
         }
-        if (mTitle == "100% Complete"){
-            editor.putInt(getString(R.string.filter_type),3);
+        else if (mTitle == getString(R.string.complete)){
+            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.complete)) + " - " + mTitle;
+            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.complete));
         }
         editor.commit();
-
-        placeholderFragment.updatePlatform();
 
     }
 
@@ -122,6 +240,11 @@ public class MainActivity extends Activity implements NavigationDrawerFragment.N
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
+    }
+
+    @Override
+    public void onNewPlatformEntered(){
+        mPlaceholderFragment.setLoadingScreen(true);
     }
 
 
@@ -147,7 +270,7 @@ public class MainActivity extends Activity implements NavigationDrawerFragment.N
 
                 @Override
                 public boolean onQueryTextChange(String newText) {
-                    //PlaceholderFragment.updateListView(currentPlatform,orderType,newText);
+                    //PlaceholderFragment.updateListView(currentPlatform,sortType,newText);
                     return false;
                 }
             });
@@ -169,9 +292,5 @@ public class MainActivity extends Activity implements NavigationDrawerFragment.N
         }
         return super.onOptionsItemSelected(item);
     }
-
-
-
-
 
 }

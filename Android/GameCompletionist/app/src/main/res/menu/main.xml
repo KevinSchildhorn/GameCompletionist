@@ -8,10 +8,30 @@
         android:showAsAction="collapseActionView|ifRoom"
         android:actionViewClass="android.widget.SearchView" />
 
+    <item android:id="@+id/action_edit"
+        android:title="edit"
+        android:icon="@drawable/ic_edit_white"
+        android:showAsAction="always" />
+
+    <item android:id="@+id/action_change_direction"
+        android:title="test"
+        android:icon="@drawable/ic_swap_vert_white_24dp"
+        android:showAsAction="always" />
+
     <item android:id="@+id/action_sort"
         android:title="test"
         android:icon="@drawable/ic_sort_white"
         android:showAsAction="always" />
+
+    <item android:id="@+id/action_rename"
+        android:title="@string/action_rename"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
+
+    <item android:id="@+id/action_delete"
+        android:title="@string/action_delete"
+        android:orderInCategory="100"
+        android:showAsAction="never" />
 
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"

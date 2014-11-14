@@ -19,13 +19,16 @@ public class Game {
     private int achievementCount;       // DONE - requestAchievements
 
     public int completionStatus;
-    public int customOrderIndex;
+    public int customSortTypeIndex;
 
 
-    public Game (int id, String name, int platformID,String logoURL, int minutesPlayed, int recentMinutesPlayed,int achievementCount,int completionStatus,int customOrderIndex){
+    public Game (int id, String name, int platformID,String logoURL, int minutesPlayed, int recentMinutesPlayed,int achievementCount,int completionStatus,int customSortTypeIndex){
         // initialize
         this.id = id;
         this.name = name;
+        if(this.name.startsWith("The ")){
+            this.name = this.name.substring(4) + ", The";
+        }
         this.platformID = platformID;
         if(logoURL.startsWith("http://")){
             this.logoURL = logoURL;
@@ -35,9 +38,15 @@ public class Game {
         }
         this.minutesPlayed = minutesPlayed;
         this.recentMinutesPlayed = recentMinutesPlayed;
+        if(this.recentMinutesPlayed == -1) {
+            this.recentMinutesPlayed = 0;
+        }
         this.achievementCount = achievementCount;
+        if(this.achievementCount == -1) {
+            this.achievementCount = 0;
+        }
         this.completionStatus = completionStatus;
-        this.customOrderIndex = customOrderIndex;
+        this.customSortTypeIndex = customSortTypeIndex;
     }
 
 
@@ -55,7 +64,7 @@ public class Game {
     public String getLogoURL(){
         return this.logoURL;
     }
-    public int getHoursPlayed(){
+    public int getMinutesPlayed(){
         return this.minutesPlayed;
     }
     public int getRecentMinutesPlayed(){
