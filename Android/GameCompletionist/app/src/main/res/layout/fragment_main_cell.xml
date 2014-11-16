@@ -55,7 +55,6 @@
         android:layout_alignWithParentIfMissing="true"
         android:gravity="center_vertical|right"
         android:layout_marginRight="10sp"
-        android:text="Example"
         android:textSize="12sp"
         android:layout_alignParentBottom="true"
         android:layout_below="@+id/gameName"
@@ -72,7 +71,6 @@
         android:layout_alignBottom="@+id/gameName"
         android:textSize="16sp"
         android:gravity="center_vertical|right"
-        android:text="test"
         android:layout_below="@+id/gameName" />
 
 </RelativeLayout>

@@ -37,7 +37,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     public static final String KEY_LOGOURL = "LogoURL";
     public static final String KEY_MINUTESPLAYED = "minutesPlayed";
     public static final String KEY_RECENTMINUTESPLAYED = "recentMinutesPlayed";
-    public static final String KEY_ACHIEVEMENTCOUNT = "AchievementCount";
+    public static final String KEY_ACHIEVEMENTSFINISHEDCOUNT = "AchievementsFinishedCount";
+    public static final String KEY_ACHIEVEMENTTOTALCOUNT = "AchievementTotalCount";
     public static final String KEY_COMPLETIONSTATUS = "CompletionStatus";
     public static final String KEY_CUSTOMSORTINDEX = "CustomSortIndex";
 
@@ -63,7 +64,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_LOGOURL + " TEXT," +
                 KEY_MINUTESPLAYED + " INT," +
                 KEY_RECENTMINUTESPLAYED + " INT," +
-                KEY_ACHIEVEMENTCOUNT + " INT," +
+                KEY_ACHIEVEMENTSFINISHEDCOUNT + " INT," +
+                KEY_ACHIEVEMENTTOTALCOUNT + " INT," +
                 KEY_COMPLETIONSTATUS + " INT," +
                 KEY_CUSTOMSORTINDEX + " INT" +
                 ")";
@@ -90,7 +92,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
         ContentValues values = new ContentValues();
         values.put(KEY_ID, platform.getID());
-        values.put(KEY_NAME, "'" + platform.getName() + "'");
+        values.put(KEY_NAME,platform.getName());
         values.put(KEY_LOGIN, platform.getLogin());
         values.put(KEY_TYPEID, platform.getTypeID());
         values.put(KEY_APIKEY, platform.getAPIkey());
@@ -223,6 +225,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
             cursor.moveToNext();
         }
         cursor.close();
+
         return names;
     }
 
@@ -241,7 +244,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_LOGOURL, game.getLogoURL());
         values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
-        values.put(KEY_ACHIEVEMENTCOUNT, game.getAchievementCount());
+        values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
+        values.put(KEY_ACHIEVEMENTTOTALCOUNT, game.getAchievementsTotalCount());
         values.put(KEY_COMPLETIONSTATUS, game.completionStatus);
         values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
 
@@ -260,7 +264,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_LOGOURL,
                 KEY_MINUTESPLAYED,
                 KEY_RECENTMINUTESPLAYED,
-                KEY_ACHIEVEMENTCOUNT,
+                KEY_ACHIEVEMENTSFINISHEDCOUNT,
+                KEY_ACHIEVEMENTTOTALCOUNT,
                 KEY_COMPLETIONSTATUS,
                 KEY_CUSTOMSORTINDEX
         };
@@ -322,7 +327,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                                 curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGOURL)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_MINUTESPLAYED)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_RECENTMINUTESPLAYED)),
-                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTCOUNT)),
+                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTSFINISHEDCOUNT)),
+                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTTOTALCOUNT)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_COMPLETIONSTATUS)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CUSTOMSORTINDEX)));
 
@@ -343,7 +349,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_LOGOURL, game.getLogoURL());
         values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
-        values.put(KEY_ACHIEVEMENTCOUNT, game.getAchievementCount());
+        values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
+        values.put(KEY_ACHIEVEMENTTOTALCOUNT, game.getAchievementsTotalCount());
         values.put(KEY_COMPLETIONSTATUS, game.completionStatus);
         values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
 
@@ -363,7 +370,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         Cursor cursor;
         int id = 0;
         if(!platformName.equals("All")) {
-            countQuery = "SELECT " + KEY_ID + " FROM " + TABLE_PLATFORM + " WHERE " + KEY_NAME + " ='" + platformName + "'";
+            countQuery = "SELECT " + KEY_ID + " FROM " + TABLE_PLATFORM + " WHERE " + KEY_NAME + " = '" + platformName + "'";
             db = this.getReadableDatabase();
             cursor = db.rawQuery(countQuery, null);
             cursor.moveToFirst();

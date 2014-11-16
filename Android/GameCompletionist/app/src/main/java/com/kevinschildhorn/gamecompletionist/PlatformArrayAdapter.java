@@ -92,6 +92,8 @@ public class PlatformArrayAdapter extends ArrayAdapter<String> {
             subtextView.setText(gameCount + "");
         }
 
+        db.close();
+
         return rowView;
     }
 }

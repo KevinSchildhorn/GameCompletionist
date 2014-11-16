@@ -14,6 +14,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -48,7 +49,8 @@ public class HTTPRequestHandler{
                 break;
         }
         //if(isConnected()) {
-        JSONObject gameListJSON = new HttpAsyncTask().execute(requestURI).get();
+        JSONObject gameListJSON = sendRequest(requestURI);
+        //JSONObject gameListJSON = new HttpAsyncTask().execute(requestURI).get();
         return gameListJSON.getJSONObject("response");
         //}
     }
@@ -56,19 +58,36 @@ public class HTTPRequestHandler{
 
         String requestURI = String.format("http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=%s&vanityurl=%s",platform.getAPIkey(),platform.getLogin());
         //if(isConnected()) {
-        JSONObject steamIDJSON = new HttpAsyncTask().execute(requestURI).get();
+        JSONObject steamIDJSON = sendRequest(requestURI);
+        //JSONObject steamIDJSON = new HttpAsyncTask().execute(requestURI).get();
         steamIDJSON = steamIDJSON.getJSONObject("response");
         String steamID = steamIDJSON.getString("steamid");
         return steamID;
         //}
     }
-    public void requestAchievements(Platform platform, Game game) {
-        String requestURI = String.format("http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%s&key=%s&steamid=%s",game.getID(),platform.getAPIkey(),platform.getLogin());
-        //if(isConnected()) {
-        new HttpAsyncTask().execute(requestURI,"Game");
-        //}
-    }
 
+    public void requestGameAchievements(Platform platform,int index){
+        String requestURI = String.format(  "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=%s&key=%s&steamid=%s",
+                platform.getGameAtIndex(index).getID(),
+                platform.getAPIkey(),
+                platform.getLogin());
+        //if(isConnected()) {
+        JSONObject steamIDJSON = sendRequest(requestURI);
+        try {
+            if(steamIDJSON.has("playerstats")) {
+                steamIDJSON = steamIDJSON.getJSONObject("playerstats");
+                if (steamIDJSON.has("achievements")) {
+                    JSONArray achievements = steamIDJSON.getJSONArray("achievements");
+                    if (achievements != null) {
+                        platform.getGameAtIndex(index).setAchievements(achievements);
+
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
     // Processing
 

@@ -1,5 +1,14 @@
 package com.kevinschildhorn.gamecompletionist.DataClasses;
 
+import android.util.Log;
+
+import com.kevinschildhorn.gamecompletionist.HTTP.HTTPRequestHandler;
+import com.kevinschildhorn.gamecompletionist.SQLiteHelper;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Date;
 
 /**
@@ -16,13 +25,15 @@ public class Game {
     private String logoURL;             // DONE - requestGameInfo
     private int minutesPlayed;        // DONE - requestGameInfo
     private int recentMinutesPlayed;  // DONE - requestGameInfo/requestRecentGames
-    private int achievementCount;       // DONE - requestAchievements
+    private int achievementsFinishedCount;       // DONE - requestAchievements
+    private int achievementsTotalCount;       // DONE - requestAchievements
+
 
     public int completionStatus;
     public int customSortTypeIndex;
 
 
-    public Game (int id, String name, int platformID,String logoURL, int minutesPlayed, int recentMinutesPlayed,int achievementCount,int completionStatus,int customSortTypeIndex){
+    public Game (int id, String name, int platformID,String logoURL, int minutesPlayed, int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount, int completionStatus,int customSortTypeIndex){
         // initialize
         this.id = id;
         this.name = name;
@@ -41,14 +52,17 @@ public class Game {
         if(this.recentMinutesPlayed == -1) {
             this.recentMinutesPlayed = 0;
         }
-        this.achievementCount = achievementCount;
-        if(this.achievementCount == -1) {
-            this.achievementCount = 0;
+        this.achievementsFinishedCount = achievementsFinishedCount;
+        if(this.achievementsFinishedCount == -1) {
+            this.achievementsFinishedCount = 0;
+        }
+        this.achievementsTotalCount = achievementsTotalCount;
+        if(this.achievementsTotalCount == -1) {
+            this.achievementsTotalCount = 0;
         }
         this.completionStatus = completionStatus;
         this.customSortTypeIndex = customSortTypeIndex;
     }
-
 
     // Getters
 
@@ -70,8 +84,29 @@ public class Game {
     public int getRecentMinutesPlayed(){
         return this.recentMinutesPlayed;
     }
-    public int getAchievementCount(){
-        return this.achievementCount;
+    public int getAchievementsFinishedCount(){
+        return this.achievementsFinishedCount;
+    }
+    public int getAchievementsTotalCount(){
+        return this.achievementsTotalCount;
+    }
+
+
+    public void setAchievements(JSONArray achievements) throws JSONException {
+        this.achievementsFinishedCount = 0;
+        this.achievementsTotalCount = 0;
+
+        JSONObject achievement;
+        for(int i=0;i<achievements.length();i++){
+            achievement = (JSONObject) achievements.get(i);
+            if(achievement.getInt("achieved") == 1){
+                this.achievementsFinishedCount++;
+            }
+
+            this.achievementsTotalCount++;
+        }
+
+        Log.e("", this.achievementsFinishedCount + "/" + this.achievementsTotalCount + " Achievements");
     }
 
 }

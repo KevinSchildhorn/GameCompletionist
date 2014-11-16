@@ -103,8 +103,9 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         Game temp = values[position];
         textView.setText(temp.getName());
         textView.setTextColor(Color.BLACK);
-
-        achievementTextView.setText(temp.getAchievementCount() + " achievements");
+        if(temp.getAchievementsTotalCount() > 0) {
+            achievementTextView.setText(temp.getAchievementsFinishedCount() + "/" + temp.getAchievementsTotalCount() + " achievements");
+        }
         int hours;
         int minutes;
         switch (sortType){
@@ -115,9 +116,11 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
-                hours = temp.getRecentMinutesPlayed()/60;
-                minutes = temp.getRecentMinutesPlayed()%60;
-                tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                if(temp.getRecentMinutesPlayed() > 0) {
+                    hours = temp.getRecentMinutesPlayed() / 60;
+                    minutes = temp.getRecentMinutesPlayed() % 60;
+                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                }
                 break;
 
             case 2:     // Hours Played
@@ -125,9 +128,11 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
-                hours = temp.getRecentMinutesPlayed()/60;
-                minutes = temp.getRecentMinutesPlayed()%60;
-                tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                if(temp.getRecentMinutesPlayed() > 0) {
+                    hours = temp.getRecentMinutesPlayed() / 60;
+                    minutes = temp.getRecentMinutesPlayed() % 60;
+                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                }
                 break;
 
             case 4:     // Recent Hours
@@ -135,9 +140,11 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
-                hours = temp.getRecentMinutesPlayed()/60;
-                minutes = temp.getRecentMinutesPlayed()%60;
-                secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                if(temp.getRecentMinutesPlayed() > 0) {
+                    hours = temp.getRecentMinutesPlayed() / 60;
+                    minutes = temp.getRecentMinutesPlayed() % 60;
+                    secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                }
                 break;
 
             case 6:     // Date Purchased
@@ -145,9 +152,11 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
-                hours = temp.getRecentMinutesPlayed()/60;
-                minutes = temp.getRecentMinutesPlayed()%60;
-                tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                if(temp.getRecentMinutesPlayed() > 0) {
+                    hours = temp.getRecentMinutesPlayed() / 60;
+                    minutes = temp.getRecentMinutesPlayed() % 60;
+                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                }
                 break;
 
         }
@@ -163,6 +172,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         public DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
         }
+
         protected Bitmap doInBackground(String... urls) {
             String urldisplay = urls[0];
             Bitmap mIcon11 = null;

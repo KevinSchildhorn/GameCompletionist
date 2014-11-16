@@ -69,6 +69,7 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
         db = new SQLiteHelper(this);
         ArrayList platformArray = db.getPlatforms();
+        db.close();
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout),
@@ -76,7 +77,7 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
-        mPlatformHandler = new PlatformHandler(this,this);
+        mPlatformHandler = new PlatformHandler(this,this,db);
         // Pull any new games from platform
         Platform platformTemp;
         for(int i=0;i<platformArray.size();i++){
@@ -185,6 +186,7 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
                 platformTemp.setName(input.getText().toString());
                 SQLiteHelper db = new SQLiteHelper(getApplication());
                 db.setPlatform(platformTemp);
+                db.close();
 
             }
         });
@@ -288,21 +290,35 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         mPlaceholderFragment.updatePlatform();
     }
 
+
     @Override
-    public void onUpdatedIncomingPlatform(Platform platform,ArrayList<Game> games){
+    public void onUpdatedIncomingPlatform(ArrayList<Game> games){
         mNavigationDrawerFragment.updatePlatforms(false);
         mPlaceholderFragment.updatePlatform();
 
-        String gamesString = "";
-        for (int i=0;i<games.size();i++){
-            gamesString += "\n  -" + games.get(i).getName();
-        }
+        if(games.size() > 0) {
+            String gamesString = "";
+            for (int i = 0; i < games.size(); i++) {
+                gamesString += "\n  -" + games.get(i).getName();
+            }
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("New Games Found")
-                .setMessage("New Games were found for this platform" + gamesString)
-                .setNegativeButton("Ok", null);
-        AlertDialog dialog = builder.create();
-        dialog.show();
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("New Games Found")
+                    .setMessage("New Games were found for this platform" + gamesString)
+                    .setNegativeButton("Ok", null);
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+    }
+
+
+
+    @Override
+    public void onOnUpdatedAchievements(int finishedCount, int totalCount) {
+        String loadingInfo = null;
+        if(finishedCount != totalCount) {
+            loadingInfo = finishedCount + "/" + totalCount + " achievements loaded";
+        }
+        mPlaceholderFragment.setLoadingInfo(loadingInfo);
     }
 }

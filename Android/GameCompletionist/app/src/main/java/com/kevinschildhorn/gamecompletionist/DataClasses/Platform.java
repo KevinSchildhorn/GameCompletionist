@@ -37,7 +37,7 @@ public class Platform {
         this.id = incomingID;
         this.login = incomingLogin;
         this.typeID = incomingType;
-
+        this.games = new Game[0];
         // initialize based on platform type
         switch (this.typeID) {
             case 1:
@@ -62,6 +62,7 @@ public class Platform {
 
     public void addInformationFromServer(HTTPRequestHandler requestHandler,SQLiteHelper db){
         try {
+            this.name = this.name + "_" + this.login;
             this.login = requestHandler.requestSteamID(this);
             updateGamesList(requestHandler,db);
         } catch (JSONException e) {
@@ -84,24 +85,18 @@ public class Platform {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        return null;
+        return new ArrayList<Game>();
     }
+
+
+    public void updateGameAchievementAtIndex(int index,HTTPRequestHandler requestHandler,SQLiteHelper db){
+        requestHandler.requestGameAchievements(this,index);
+        db.setGame(games[index]);
+    }
+
     // Getters
 
     // Checks if name already exists in database and if so returns a custom one
-    public void setUniqueName(SQLiteHelper db){
-        int nameCount = 0;
-        ArrayList<String> existingNames = db.getPlatformNames();
-
-        for(int i=0;i<existingNames.size();i++){
-            if(existingNames.get(i).startsWith(name)){
-                nameCount++;
-            }
-        }
-        if(nameCount != 0){
-            this.name += " " + nameCount+1;
-        }
-    }
     public Game[] getGames () {
         return this.games;
     }
@@ -145,7 +140,6 @@ public class Platform {
 
     // Returns the new games
     public ArrayList<Game> parseAndAddGameList(JSONObject gameList,SQLiteHelper db) throws JSONException {
-
         int currentGameCount = this.games.length;
         int gameCount = gameList.getInt("game_count");
 
@@ -166,10 +160,13 @@ public class Platform {
             for (int i = 0; i < gameCount; i++) {
                 gameInfoTemp = gameInfoArray.getJSONObject(i);
                 recent = -1;
+
                 try {
-                    recent = gameInfoTemp.getInt("playtime_2weeks");
+                    if(gameInfoTemp.has("playtime_2weeks")) {
+                        recent = gameInfoTemp.getInt("playtime_2weeks");
+                    }
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
 
                 gameTemp = new Game(gameInfoTemp.getInt("appid"),               // ID
@@ -178,7 +175,8 @@ public class Platform {
                         gameInfoTemp.getString("img_logo_url"),     // LogoURL
                         gameInfoTemp.getInt("playtime_forever"),    // HoursPlayed
                         recent,                                     // lastTimePlayed
-                        -1,                                         // AchievementCount
+                        -1,                                         // AchievementsFinishedCount
+                        -1,                                         // AchievementsTotalCount
                         0,                                          // CompletionStatus
                         -1);                                        // CustomSortIndex
 
@@ -195,7 +193,7 @@ public class Platform {
 
             return updatedGames;
         }
-        return null;
+        return new ArrayList<Game>();
     }
 
 }

@@ -26,6 +26,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
@@ -45,6 +46,7 @@ public class PlaceholderFragment extends Fragment {
     ListView listview;
     ProgressBar mProgressSpinner;
     TextView mTextInfo;
+    TextView mLoadingInfo;
 
     GameArrayAdapter adapter;
     Platform currentPlatform;
@@ -55,6 +57,7 @@ public class PlaceholderFragment extends Fragment {
     boolean sortDirectionAscending;
 
     ActionMode actionMode;
+    MyReceiver recev;
 
     public static PlaceholderFragment newInstance(int sectionNumber) {
         PlaceholderFragment fragment = new PlaceholderFragment();
@@ -81,8 +84,16 @@ public class PlaceholderFragment extends Fragment {
         mTextInfo.setVisibility(View.INVISIBLE);
         mTextInfo.setBackgroundColor(Color.argb(100,0,0,0));
 
+        mLoadingInfo = (TextView) rootView.findViewById(R.id.loadingInfo);
+        mLoadingInfo.setVisibility(View.INVISIBLE);
+
         mProgressSpinner = (ProgressBar) rootView.findViewById(R.id.progressBar);
         mProgressSpinner.setVisibility(View.VISIBLE);
+
+        if (recev != null) {
+            IntentFilter intentFilter = new IntentFilter("test");
+            getActivity().registerReceiver(recev, intentFilter);
+        }
 
         listview.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
@@ -150,7 +161,7 @@ public class PlaceholderFragment extends Fragment {
             Platform platform = new Platform(0,"","",0,"",mCallbacks.getDatabase().getGames(platformID,filterType,sortType,sortDirectionAscending));
             if(platform.getGames().length == 0){
                 mTextInfo.setVisibility(View.VISIBLE);
-                mTextInfo.setText("You have no Platforms. Please add a platform from the drawer");
+                mTextInfo.setText("You don't have any platforms! Please add a platform from the drawer");
             }
             else{
                 updateListView(platform, sortType, "");
@@ -303,7 +314,8 @@ public class PlaceholderFragment extends Fragment {
             if (screenOn) {
                 mProgressSpinner.setVisibility(View.VISIBLE);
                 mTextInfo.setVisibility(View.VISIBLE);
-                mTextInfo.setText("\n\n\n\n\nDownloading Games for the first time, this may take a minute");
+                mTextInfo.setText("\n\n\n\n\nDownloading Games for the first time, this may take a minute." +
+                        "\nAchievements will be loaded afterwards in the background");
             }
             else{
                 mProgressSpinner.setVisibility(View.INVISIBLE);
@@ -312,6 +324,28 @@ public class PlaceholderFragment extends Fragment {
         }
     }
 
+    public void setLoadingInfo(String loadingInfo){
+
+    }
+
+    public class MyReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int fin,total;
+            fin = intent.getIntExtra("finished",0);
+            total = intent.getIntExtra("total",0);
+
+            if(fin == total){
+                mLoadingInfo.setVisibility(View.INVISIBLE);
+            }
+            else{
+                mLoadingInfo.setVisibility(View.VISIBLE);
+                mLoadingInfo.setText(fin + "/" + total + " achievements loaded");
+            }
+        }
+
+    }
     public static interface PlaceholderCallbacks {
         /**
          * Called when an item in the navigation drawer is selected.
