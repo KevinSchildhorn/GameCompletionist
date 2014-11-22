@@ -31,6 +31,7 @@
         android:layout_alignWithParentIfMissing="true"
         android:gravity="center"
         android:layout_margin="10sp"
+        android:background="@drawable/count_background"
         android:textSize="20sp" />
 
 

@@ -4,35 +4,17 @@ import android.app.Activity;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.SearchManager;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.ActionMode;
-import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.SearchView;
-import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
@@ -41,91 +23,86 @@ import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
 import java.util.ArrayList;
 
 
-public class MainActivity extends Activity  implements  NavigationDrawerFragment.NavigationDrawerCallbacks,
-                                                        PlaceholderFragment.PlaceholderCallbacks,
-                                                        PlatformHandler.PlatformGeneratorCallbacks{
+public class MainActivity extends Activity  implements  NavigationDrawerFragment.NavigationDrawerCallbacks, PlatformHandler.PlatformGeneratorCallbacks, ActionBar.TabListener{
 
     // Fragments
     private NavigationDrawerFragment mNavigationDrawerFragment;
-    private PlaceholderFragment mPlaceholderFragment;
+    private TabFragment mCurrentTabFragment;
 
     // last screen title
-    private CharSequence mTitle;
+    private CharSequence mTitle = "";
 
     // Platform Generator
     PlatformHandler mPlatformHandler;
 
-    SQLiteHelper db;
+    public static final int NOPLATFORMS = 0;
+    public static final int DOWNLOADINGPLATFORMS = 1;
+    public static final int DOWNLOADINGACHIEVEMENTS = 2;
+    public static final int DOWNLOADSFINISHED = 2;
+
+    int platformState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        SQLiteHelper db = SQLiteHelper.getInstance(this);
+        mPlatformHandler = new PlatformHandler(this,this);
+
+        // GUI
+
         // Set up the drawer.
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mTitle = getTitle();
 
-        db = new SQLiteHelper(this);
+
         ArrayList platformArray = db.getPlatforms();
-        db.close();
+        if(platformArray.size() <= 0){
+            platformState = NOPLATFORMS;
+        }
+        else{
+            platformState = DOWNLOADSFINISHED;
+        }
+
+
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout),
                 platformArray);
 
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+        // Tabs
+        final ActionBar actionBar = getActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
-        mPlatformHandler = new PlatformHandler(this,this,db);
-        // Pull any new games from platform
-        Platform platformTemp;
-        for(int i=0;i<platformArray.size();i++){
-            platformTemp = (Platform)platformArray.get(i);
-            mPlatformHandler.RequestUpdatedGameListFromServer(platformTemp);
-        }
+        // for each of the sections in the app, add a tab to the action bar.
+        actionBar.addTab(actionBar.newTab().setText(R.string.unfinished)
+                .setTabListener(this));
+        actionBar.addTab(actionBar.newTab().setText(R.string.finished)
+                .setTabListener(this));
+        actionBar.addTab(actionBar.newTab().setText(R.string.complete)
+                .setTabListener(this));
+
+        actionBar.setBackgroundDrawable(new ColorDrawable(Color.argb(255,67,36,102)));
+        actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.WHITE));
+        actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.argb(255,67,36,102)));
     }
+    @Override
+    protected void onDestroy(){
+        SQLiteHelper db = SQLiteHelper.getInstance(this);
+        db.close();
+    }
+
+    //region Navigation Drawer Callbacks
 
     @Override
-    public SQLiteHelper getDatabase(){
-        return db;
+    public void onNavigationDrawerItemSelected(String platformName) {
+        if(mCurrentTabFragment != null) {
+            mCurrentTabFragment.updatePlatform();
+        }
+        mTitle = platformName;
+        getActionBar().setTitle(mTitle);
     }
-    // Navigation Drawer Callbacks
-
-    @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        // update the main content by replacing fragments
-
-        if(mPlaceholderFragment == null) {
-            FragmentManager fragmentManager = getFragmentManager();
-            mPlaceholderFragment = PlaceholderFragment.newInstance(position + 1);
-            fragmentManager.beginTransaction()
-                    .replace(R.id.container, mPlaceholderFragment)
-                    .commit();
-        }
-        else {
-            onSectionAttached(position + 1);
-            mPlaceholderFragment.updatePlatform();
-        }
-    }
-
-    /*private BroadcastReceiver newPlatformReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            mPlaceholderFragment.updatePlatform();
-        }
-    };
-
-    private BroadcastReceiver updatePlatformReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            mNavigationDrawerFragment.OnUpdatePlatformReceived(getApplication());
-            mPlaceholderFragment.updatePlatform();
-            Toast.makeText(context,"New Games Found",Toast.LENGTH_LONG).show();
-        }
-    };*/
 
     @Override
     public void onSortTypeSelected(int sortType){
@@ -136,7 +113,7 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         editor.apply();
 
         // Alert the fragment to reset the platform
-        mPlaceholderFragment.updatePlatform();
+        mCurrentTabFragment.updatePlatform();
     }
 
     @Override
@@ -148,15 +125,15 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         editor.apply();
 
         // Alert the fragment to reset the platform
-        mPlaceholderFragment.updatePlatform();
+        mCurrentTabFragment.updatePlatform();
     }
     @Override
-   public  void onPlatformDeleteSelected(){
+    public  void onPlatformDeleteSelected(){
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Are you Sure you want to delete this platform?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, final int platformIdx) {
-                        mPlaceholderFragment.deleteCurrentPlatform();
+                        mCurrentTabFragment.deleteCurrentPlatform();
                         mNavigationDrawerFragment.refreshDrawer();
 
                     }
@@ -177,16 +154,18 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
         // Set an EditText view to get user input
         final EditText input = new EditText(builder.getContext());
-        final Platform platformTemp = mPlaceholderFragment.getCurrentPlatform();
+        final Platform platformTemp = mCurrentTabFragment.getCurrentPlatform();
         input.setText(platformTemp.getName());
         builder.setView(input);
 
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 platformTemp.setName(input.getText().toString());
-                SQLiteHelper db = new SQLiteHelper(getApplication());
+                SQLiteHelper db = SQLiteHelper.getInstance(getApplication());
                 db.setPlatform(platformTemp);
-                db.close();
+                mNavigationDrawerFragment.resetPlatforms();
+                mTitle = platformTemp.getName();
+                getActionBar().setTitle(mTitle);
 
             }
         });
@@ -200,43 +179,56 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
     @Override
     public void requestNewPlatform(int platformType, String text) {
+        platformState = DOWNLOADINGPLATFORMS;
+        mCurrentTabFragment.setPlatformState(platformState);
         mPlatformHandler.RequestNewPlatformFromServer(platformType,text);
-        mPlaceholderFragment.setLoadingScreen(true);
+        mCurrentTabFragment.setLoadingScreen(true);
     }
 
+    @Override
+    public void onEditSelected() {
+        mCurrentTabFragment.enableEditing();
+    }
 
-    // Action Bar
+    //endregion
 
-    public void onSectionAttached(int number) {
-        number = number-1;
-        mTitle =  mNavigationDrawerFragment.getListItemName(number);
+    //region Tabs
 
-        SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = m_settingsSP.edit();
-        if (mTitle == getString(R.string.unfinished)){
-            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.unfinished)) + " - " + mTitle;
-            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.unfinished));
-        }
-        else if (mTitle == getString(R.string.finished)){
-            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.finished)) + " - " + mTitle;
-            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.finished));
-        }
-        else if (mTitle == getString(R.string.complete)){
-            mTitle = mNavigationDrawerFragment.getListItemName(number-getResources().getInteger(R.integer.complete)) + " - " + mTitle;
-            editor.putInt(getString(R.string.filter_type),getResources().getInteger(R.integer.complete));
-        }
-        editor.commit();
+    @Override
+    public void onTabSelected(ActionBar.Tab tab, android.app.FragmentTransaction fragmentTransaction) {
+        mCurrentTabFragment = new TabFragment();
+        Bundle args = new Bundle();
+        args.putInt("tabNumber", tab.getPosition()+1);
+        args.putInt("state", platformState);
+        mCurrentTabFragment.setArguments(args);
+
+        getFragmentManager().beginTransaction()
+                .replace(R.id.container, mCurrentTabFragment).commit();
+    }
+
+    @Override
+    public void onTabUnselected(ActionBar.Tab tab, android.app.FragmentTransaction fragmentTransaction) {
 
     }
+
+    @Override
+    public void onTabReselected(ActionBar.Tab tab, android.app.FragmentTransaction fragmentTransaction) {
+
+    }
+    //endregion
+
+    //region Action Bar
 
     public void restoreActionBar() {
         ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+        //actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
         actionBar.setDisplayShowTitleEnabled(true);
         actionBar.setTitle(mTitle);
     }
 
-    // Options
+
+    //region Options
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -258,7 +250,7 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
 
                 @Override
                 public boolean onQueryTextChange(String newText) {
-                    //PlaceholderFragment.updateListView(currentPlatform,sortType,newText);
+                    mCurrentTabFragment.setQueryText(newText);
                     return false;
                 }
             });
@@ -280,21 +272,25 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         }
         return super.onOptionsItemSelected(item);
     }
+    //endregion
+    //endregion
 
-
-    // Platform Handler Callbacks
+    //region Platform Handler Callbacks
 
     @Override
-    public void onNewIncomingPlatform(Platform platform){
+    public void onNewIncomingPlatform(Platform platform) {
+        platformState = DOWNLOADINGACHIEVEMENTS;
+        mCurrentTabFragment.setPlatformState(platformState);
         mNavigationDrawerFragment.updatePlatforms(true);
-        mPlaceholderFragment.updatePlatform();
+        mCurrentTabFragment.updatePlatform();
     }
 
-
     @Override
-    public void onUpdatedIncomingPlatform(ArrayList<Game> games){
+    public void onUpdatedIncomingPlatform(ArrayList<Game> games) {
+        platformState = DOWNLOADINGPLATFORMS;
+        mCurrentTabFragment.setPlatformState(platformState);
         mNavigationDrawerFragment.updatePlatforms(false);
-        mPlaceholderFragment.updatePlatform();
+        mCurrentTabFragment.updatePlatform();
 
         if(games.size() > 0) {
             String gamesString = "";
@@ -311,14 +307,15 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         }
     }
 
-
-
     @Override
     public void onOnUpdatedAchievements(int finishedCount, int totalCount) {
+        platformState = DOWNLOADSFINISHED;
+        mCurrentTabFragment.setPlatformState(platformState);
         String loadingInfo = null;
         if(finishedCount != totalCount) {
             loadingInfo = finishedCount + "/" + totalCount + " achievements loaded";
         }
-        mPlaceholderFragment.setLoadingInfo(loadingInfo);
+        mCurrentTabFragment.setLoadingInfo(loadingInfo);
     }
+    //endregion
 }

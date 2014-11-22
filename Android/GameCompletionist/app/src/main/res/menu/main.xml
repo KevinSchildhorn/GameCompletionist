@@ -3,23 +3,23 @@
     tools:context=".MainActivity" >
 
     <item android:id="@+id/search"
-        android:title="Game"
+        android:title="Search"
         android:icon="@drawable/ic_search_white_24dp"
-        android:showAsAction="collapseActionView|ifRoom"
+        android:showAsAction="always"
         android:actionViewClass="android.widget.SearchView" />
 
     <item android:id="@+id/action_edit"
-        android:title="edit"
+        android:title="Edit List"
         android:icon="@drawable/ic_edit_white"
-        android:showAsAction="always" />
+        android:showAsAction="ifRoom" />
 
     <item android:id="@+id/action_change_direction"
-        android:title="test"
+        android:title="Change Direction"
         android:icon="@drawable/ic_swap_vert_white_24dp"
         android:showAsAction="always" />
 
     <item android:id="@+id/action_sort"
-        android:title="test"
+        android:title="Sort"
         android:icon="@drawable/ic_sort_white"
         android:showAsAction="always" />
 

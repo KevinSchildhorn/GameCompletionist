@@ -8,7 +8,7 @@
     <integer name="name">0</integer>
     <integer name="hoursPlayed">1</integer>
     <integer name="recentlyPlayed">2</integer>
-    <integer name="purchaseDate">3</integer>
+    <integer name="achievementsEarned">3</integer>
     <integer name="customOrder">4</integer>
 
 </resources>

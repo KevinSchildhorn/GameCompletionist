@@ -1,13 +1,9 @@
 package com.kevinschildhorn.gamecompletionist;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.os.AsyncTask;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,9 +13,9 @@ import android.widget.TextView;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 
-import java.io.InputStream;
-import java.net.URL;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * SCM Products Inc.
@@ -33,6 +29,11 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
     private ArrayList<Integer> selectedItemIndexes;
     boolean customSortType;
 
+    HashMap<Game, Integer> mIdMap = new HashMap<Game, Integer>();
+
+    final int INVALID_ID = -1;
+
+
     public GameArrayAdapter(Context context, Game[] values) {
         super(context, R.layout.fragment_main_cell, values);
 
@@ -42,8 +43,12 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         selectedItemIndexes = new ArrayList<Integer>();
     }
 
-    public GameArrayAdapter(Context context, Game[] values,boolean customSortType) {
-        super(context, R.layout.fragment_main_sorted_cell, values);
+    public GameArrayAdapter(Context context, int layoutID,Game[]  values) {
+        super(context, layoutID, values);
+
+        for (int i = 0; i < values.length; ++i) {
+            mIdMap.put(values[i], i);
+        }
 
         this.customSortType = customSortType;
         this.context = context;
@@ -51,21 +56,29 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         selectedItemIndexes = new ArrayList<Integer>();
     }
 
+    @Override
+    public long getItemId(int position) {
+        if (position < 0 || position >= mIdMap.size()) {
+            return INVALID_ID;
+        }
+        Game item = getItem(position);
+        return mIdMap.get(item);
+    }
+
+    @Override
+    public boolean hasStableIds() {
+        return true;
+    }
 
     public void SetSortType(int sortType){
         this.sortType = sortType;
     }
 
 
-    // Selection
+    //region Selection
 
-    public boolean SelectedAtIndex(int position){
-        if (selectedItemIndexes.contains(position)) {
-            return true;
-        }
-        else {
-            return false;
-        }
+    public Game GetItemAtIndex(int position){
+        return values[position];
     }
     public void SelectItemAtIndex(int position){
         selectedItemIndexes.add(position);
@@ -88,6 +101,8 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         return this.selectedItemIndexes;
     }
 
+    //endregion
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
@@ -96,7 +111,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         View rowView = inflater.inflate(R.layout.fragment_main_cell, parent, false);
         TextView textView = (TextView) rowView.findViewById(R.id.gameName);
         TextView secondaryTextView = (TextView) rowView.findViewById(R.id.secondaryInfo);
-        TextView tertiaryTextView = (TextView) rowView.findViewById(R.id.teritaryInfo);
+        //TextView tertiaryTextView = (TextView) rowView.findViewById(R.id.teritaryInfo);
         TextView achievementTextView = (TextView) rowView.findViewById(R.id.achievements);
         ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
 
@@ -104,7 +119,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         textView.setText(temp.getName());
         textView.setTextColor(Color.BLACK);
         if(temp.getAchievementsTotalCount() > 0) {
-            achievementTextView.setText(temp.getAchievementsFinishedCount() + "/" + temp.getAchievementsTotalCount() + " achievements");
+            achievementTextView.setText("A " + temp.getAchievementsFinishedCount() + "/" + temp.getAchievementsTotalCount());
         }
         int hours;
         int minutes;
@@ -112,34 +127,31 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
 
             default:    // Name
             case 0:
-            case 1:
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
                 if(temp.getRecentMinutesPlayed() > 0) {
                     hours = temp.getRecentMinutesPlayed() / 60;
                     minutes = temp.getRecentMinutesPlayed() % 60;
-                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                    //tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
                 }
                 break;
 
-            case 2:     // Hours Played
-            case 3:
+            case 1:     // Hours Played
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
                 if(temp.getRecentMinutesPlayed() > 0) {
                     hours = temp.getRecentMinutesPlayed() / 60;
                     minutes = temp.getRecentMinutesPlayed() % 60;
-                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                   // tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
                 }
                 break;
 
-            case 4:     // Recent Hours
-            case 5:
+            case 2:     // Recent Hours
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
-                tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
+                //tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
                 if(temp.getRecentMinutesPlayed() > 0) {
                     hours = temp.getRecentMinutesPlayed() / 60;
                     minutes = temp.getRecentMinutesPlayed() % 60;
@@ -147,47 +159,45 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 }
                 break;
 
-            case 6:     // Date Purchased
-            case 7:
+            case 3:     // Achievements Earned
                 hours = temp.getMinutesPlayed()/60;
                 minutes = temp.getMinutesPlayed()%60;
                 secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
                 if(temp.getRecentMinutesPlayed() > 0) {
                     hours = temp.getRecentMinutesPlayed() / 60;
                     minutes = temp.getRecentMinutesPlayed() % 60;
-                    tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                   // tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
+                }
+                break;
+
+            case 4:     // Custom Order
+                hours = temp.getMinutesPlayed()/60;
+                minutes = temp.getMinutesPlayed()%60;
+                secondaryTextView.setText(hours + " Hours " + minutes + " Minutes Played");
+                if(temp.getRecentMinutesPlayed() > 0) {
+                    hours = temp.getRecentMinutesPlayed() / 60;
+                    minutes = temp.getRecentMinutesPlayed() % 60;
+                    // tertiaryTextView.setText(hours + " Hours " + minutes + " Minutes Recently Played");
                 }
                 break;
 
         }
 
-        new DownloadImageTask(imageView).execute(temp.getLogoURL());
+        SQLiteHelper db = SQLiteHelper.getInstance(context);
+        byte[] logo = db.getGameLogo(temp);
+
+        if(logo.length > 0){
+            Bitmap logoBitmap = BitmapFactory.decodeByteArray(logo, 0, logo.length);
+
+            //if (logoBitmap != null && !logoBitmap.isRecycled()) {
+                imageView.setImageBitmap(logoBitmap);
+              //  logoBitmap.recycle();
+              //  logoBitmap = null;
+            //}
+        }
 
         return rowView;
     }
 
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
 
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
-        }
-
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
-    }
 }

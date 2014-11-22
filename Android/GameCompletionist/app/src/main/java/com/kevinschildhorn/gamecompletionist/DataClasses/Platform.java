@@ -91,9 +91,16 @@ public class Platform {
 
     public void updateGameAchievementAtIndex(int index,HTTPRequestHandler requestHandler,SQLiteHelper db){
         requestHandler.requestGameAchievements(this,index);
-        db.setGame(games[index]);
+        db.setGameAchievements(games[index]);
     }
-
+    public void updateGameLogoAtIndex(int index,HTTPRequestHandler requestHandler,SQLiteHelper db){
+        requestHandler.requestGameLogo(this,index);
+        db.setGameLogo(games[index]);
+        if (games[index].getLogo() != null && !games[index].getLogo().isRecycled()) {
+            games[index].getLogo().recycle();
+            games[index].setLogo(null);
+        }
+    }
     // Getters
 
     // Checks if name already exists in database and if so returns a custom one
@@ -125,13 +132,13 @@ public class Platform {
     // Modify Games
 
     public Platform sortPlatformGames(int sortType,Context cont){
-        SQLiteHelper db = new SQLiteHelper(cont);
+        SQLiteHelper db = SQLiteHelper.getInstance(cont);
         ArrayList<Game> gameList = db.getGames(this.id,sortType,1,true);
         this.games = gameList.toArray(new Game[gameList.size()]);
         return this;
     }
     public Platform filterPlatformGames(int completionType,Context cont){
-        SQLiteHelper db = new SQLiteHelper(cont);
+        SQLiteHelper db = SQLiteHelper.getInstance(cont);
         ArrayList<Game> gameList = db.getGames(this.id,completionType,1,true);
         this.games = gameList.toArray(new Game[gameList.size()]);
         return this;
@@ -173,6 +180,7 @@ public class Platform {
                         gameInfoTemp.getString("name"),             // Name
                         this.id,                                    // platformID
                         gameInfoTemp.getString("img_logo_url"),     // LogoURL
+                        null,                                       // Logo
                         gameInfoTemp.getInt("playtime_forever"),    // HoursPlayed
                         recent,                                     // lastTimePlayed
                         -1,                                         // AchievementsFinishedCount
@@ -190,7 +198,6 @@ public class Platform {
             }
 
             db.addPlatform(this);
-
             return updatedGames;
         }
         return new ArrayList<Game>();

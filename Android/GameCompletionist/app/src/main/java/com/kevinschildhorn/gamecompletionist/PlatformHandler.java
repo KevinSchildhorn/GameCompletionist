@@ -3,20 +3,15 @@ package com.kevinschildhorn.gamecompletionist;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
 import com.kevinschildhorn.gamecompletionist.HTTP.HTTPRequestHandler;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by kevin on 11/14/2014.
@@ -26,16 +21,15 @@ public class PlatformHandler{
     private Context mContext;
     private PlatformGeneratorCallbacks mCallback;
     private HTTPRequestHandler mRequestHandler;
-    SQLiteHelper db;
 
     int mPlatformCounter;
 
-    public PlatformHandler(Context context,PlatformGeneratorCallbacks callbacks,SQLiteHelper db){
+    public PlatformHandler(Context context,PlatformGeneratorCallbacks callbacks){
         this.mContext = context;
         this.mCallback = callbacks;
         this.mRequestHandler = new HTTPRequestHandler();
-        this.db = db;
-        mPlatformCounter = db.getPlatformCount()+1;
+        SQLiteHelper db = SQLiteHelper.getInstance(mContext);
+        mPlatformCounter = db.getPlatformCount()+1;;
     }
 
     // Requests Platform from server, then saves it to database
@@ -52,6 +46,7 @@ public class PlatformHandler{
         @Override
         protected Platform doInBackground(Platform... platforms) {
             Platform platform = platforms[0];
+            SQLiteHelper db = SQLiteHelper.getInstance(mContext);
             platform.addInformationFromServer(mRequestHandler,db);
 
             SharedPreferences m_settingsSP = PreferenceManager.getDefaultSharedPreferences(mContext);
@@ -63,14 +58,15 @@ public class PlatformHandler{
         }
         protected void onPostExecute(Platform result) {
             mCallback.onNewIncomingPlatform(result);
-            Toast.makeText(mContext,"Games Loaded, now loading Achievements",Toast.LENGTH_LONG).show();
-            new getAchievementsAsyncTask().execute(result);
+            Toast.makeText(mContext,"Games Loaded, now loading Logos",Toast.LENGTH_LONG).show();
+            new getGameLogoAsyncTask().execute(result);
         }
     }
     private class UpdatedPlatformAsyncTask extends AsyncTask<Platform, Void, ArrayList<Game>> {
         @Override
         protected ArrayList<Game> doInBackground(Platform... platforms) {
             Platform platform = platforms[0];
+            SQLiteHelper db = SQLiteHelper.getInstance(mContext);
             return platform.updateGamesList(mRequestHandler,db);
         }
 
@@ -78,20 +74,46 @@ public class PlatformHandler{
             mCallback.onUpdatedIncomingPlatform(result);
         }
     }
+    private class getGameLogoAsyncTask extends AsyncTask<Platform, Void, Platform> {
 
+        @Override
+        protected Platform doInBackground(Platform... platforms) {
+            Platform platform = platforms[0];
+
+            for(int i=0;i<platform.getGames().length;i++){
+                SQLiteHelper db = SQLiteHelper.getInstance(mContext);
+                platform.updateGameLogoAtIndex(i, mRequestHandler, db);
+
+                Intent intent = new Intent();
+                intent.setAction("updateDownloadInfo");
+                intent.putExtra("type",1);
+                intent.putExtra("finished",i);
+                intent.putExtra("total",platform.getGames().length);
+                mContext.sendBroadcast(intent);
+            }
+            return platform;
+        }
+
+        protected void onPostExecute(Platform result) {
+            mCallback.onNewIncomingPlatform(result);
+            Toast.makeText(mContext,"Logos Loaded, now loading Achievements",Toast.LENGTH_LONG).show();
+            new getAchievementsAsyncTask().execute(result);
+        }
+    }
     private class getAchievementsAsyncTask extends AsyncTask<Platform, Void, Platform> {
         @Override
         protected Platform doInBackground(Platform... platforms) {
             Platform platform = platforms[0];
             for(int i=0;i<platform.getGames().length;i++) {
+                SQLiteHelper db = SQLiteHelper.getInstance(mContext);
                 platform.updateGameAchievementAtIndex(i, mRequestHandler, db);
 
                 Intent intent = new Intent();
-                intent.setAction("test");
+                intent.setAction("updateDownloadInfo");
+                intent.putExtra("type",2);
                 intent.putExtra("finished",i);
                 intent.putExtra("total",platform.getGames().length);
                 mContext.sendBroadcast(intent);
-                //mCallback.onOnUpdatedAchievements(i, platform.getGames().length);
             }
             return platform;
         }
@@ -101,6 +123,9 @@ public class PlatformHandler{
             Toast.makeText(mContext,"Achievements Loaded",Toast.LENGTH_LONG).show();
         }
     }
+
+
+
 
     public static interface PlatformGeneratorCallbacks {
         void onNewIncomingPlatform(Platform platform);

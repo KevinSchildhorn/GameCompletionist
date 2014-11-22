@@ -21,6 +21,8 @@ import java.util.ArrayList;
  */
 public class SQLiteHelper extends SQLiteOpenHelper{
 
+    private static SQLiteHelper sInstance;
+
     private static final String DATABASE_NAME = "games.db";
     private static final int DATABASE_VERSION = 1;
 
@@ -34,7 +36,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
     public static final String TABLE_GAMES= "Games";
     public static final String KEY_PLATFORMID = "PlatformID";
-    public static final String KEY_LOGOURL = "LogoURL";
+    public static final String KEY_LOGOURL = "LogoUrl";
+    public static final String KEY_LOGO = "Logo";
     public static final String KEY_MINUTESPLAYED = "minutesPlayed";
     public static final String KEY_RECENTMINUTESPLAYED = "recentMinutesPlayed";
     public static final String KEY_ACHIEVEMENTSFINISHEDCOUNT = "AchievementsFinishedCount";
@@ -42,8 +45,19 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     public static final String KEY_COMPLETIONSTATUS = "CompletionStatus";
     public static final String KEY_CUSTOMSORTINDEX = "CustomSortIndex";
 
+    public static SQLiteHelper getInstance(Context context) {
 
-    public SQLiteHelper(Context context) {
+        // Use the application context, which will ensure that you
+        // don't accidentally leak an Activity's context.
+        // See this article for more information: http://bit.ly/6LRzfx
+        if (sInstance == null) {
+            sInstance = new SQLiteHelper(context.getApplicationContext());
+        }
+        return sInstance;
+    }
+
+
+    private SQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
@@ -62,6 +76,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_NAME + " TEXT," +
                 KEY_PLATFORMID + " INT," +
                 KEY_LOGOURL + " TEXT," +
+                KEY_LOGO + " BLOB," +
                 KEY_MINUTESPLAYED + " INT," +
                 KEY_RECENTMINUTESPLAYED + " INT," +
                 KEY_ACHIEVEMENTSFINISHEDCOUNT + " INT," +
@@ -98,7 +113,6 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_APIKEY, platform.getAPIkey());
 
         db.insert(TABLE_PLATFORM,null,values);
-        db.close();
     }
     public void removePlatform(Platform platform) {
         SQLiteDatabase db = this.getWritableDatabase();
@@ -112,36 +126,16 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         db.delete(TABLE_PLATFORM,
                 KEY_ID + " =?",
                 new String[]{platform.getID() + ""});
-
-        db.close();
     }
-
-    public ArrayList getPlatforms(){
-        Cursor curTemp = test(-1);
-
-
-        Platform platformTemp;
-        ArrayList platformArray = new ArrayList();
-        for (int i = 0; i < curTemp.getCount(); i++) {
-            curTemp.moveToFirst();
-
-            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),-1,1,true);
-
-            platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
-                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
-                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGIN)),
-                    curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_TYPEID)),
-                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_APIKEY)),
-                    gamesTemp);
-
-            platformArray.add(platformTemp);
-
-            curTemp.moveToNext();
-        }
-        return  platformArray;
+    public int getPlatformCount(){
+        String countQuery = "SELECT  * FROM " + TABLE_PLATFORM;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(countQuery, null);
+        int cnt = cursor.getCount();
+        cursor.close();
+        return cnt;
     }
-
-    Cursor test(int ID){
+    Cursor getPlatformCursor(int ID){
         SQLiteDatabase db = this.getReadableDatabase();
 
         String[] projection = {
@@ -166,10 +160,32 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         );
         return curTemp;
     }
+    public ArrayList getPlatforms(){
+        Cursor curTemp = getPlatformCursor(-1);
 
 
+        Platform platformTemp;
+        ArrayList platformArray = new ArrayList();
+        for (int i = 0; i < curTemp.getCount(); i++) {
+            curTemp.moveToFirst();
+
+            ArrayList<Game> gamesTemp = getGames(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),-1,1,true);
+
+            platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
+                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
+                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGIN)),
+                    curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_TYPEID)),
+                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_APIKEY)),
+                    gamesTemp);
+
+            platformArray.add(platformTemp);
+
+            curTemp.moveToNext();
+        }
+        return  platformArray;
+    }
     public Platform getPlatform(int ID,int sortType,int filterType,boolean sortAscending){
-        Cursor curTemp = test(ID);
+        Cursor curTemp = getPlatformCursor(ID);
 
         Platform platformTemp;
 
@@ -200,33 +216,10 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         String[] selectionArgs = { platform.getID() + "" };
 
         int count = db.update(
-                TABLE_GAMES,
+                TABLE_PLATFORM,
                 values,
                 selection,
                 selectionArgs);
-    }
-    public int getPlatformCount(){
-        String countQuery = "SELECT  * FROM " + TABLE_PLATFORM;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(countQuery, null);
-        int cnt = cursor.getCount();
-        cursor.close();
-        return cnt;
-    }
-
-    public ArrayList<String> getPlatformNames(){
-        String countQuery = "SELECT " + KEY_NAME +" FROM " + TABLE_PLATFORM;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(countQuery, null);
-        cursor.moveToFirst();
-        ArrayList<String> names = new ArrayList<String>();
-        for(int i=0;i<cursor.getCount();i++){
-            names.add(cursor.getString(cursor.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)));
-            cursor.moveToNext();
-        }
-        cursor.close();
-
-        return names;
     }
 
 
@@ -242,6 +235,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_NAME, game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
         values.put(KEY_LOGOURL, game.getLogoURL());
+        values.put(KEY_LOGO, game.getLogoInBytes());
         values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
         values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
@@ -249,10 +243,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_COMPLETIONSTATUS, game.completionStatus);
         values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
 
-        long result = db.insert(TABLE_GAMES,null,values);
-
-        db.close();
-        return result;
+        return db.insert(TABLE_GAMES,null,values);
     }
     public ArrayList getGames(int platformID,int filterType,int sortType,boolean sortAscending){
         SQLiteDatabase db = this.getReadableDatabase();
@@ -262,6 +253,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_NAME,
                 KEY_PLATFORMID,
                 KEY_LOGOURL,
+                KEY_LOGO,
                 KEY_MINUTESPLAYED,
                 KEY_RECENTMINUTESPLAYED,
                 KEY_ACHIEVEMENTSFINISHEDCOUNT,
@@ -293,6 +285,9 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 sortTypeText = KEY_RECENTMINUTESPLAYED;
                 break;
             case 3:
+                sortTypeText = KEY_ACHIEVEMENTSFINISHEDCOUNT;
+                break;
+            case 4:
                 sortTypeText = KEY_NAME;
                 break;
         }
@@ -325,6 +320,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                                 curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_PLATFORMID)),
                                 curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGOURL)),
+                                curTemp.getBlob(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGO)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_MINUTESPLAYED)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_RECENTMINUTESPLAYED)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTSFINISHEDCOUNT)),
@@ -344,9 +340,10 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         // New value for one column
         ContentValues values = new ContentValues();
         //values.put(KEY_ID, game.id);
-        values.put(KEY_NAME, game.getName());
+        values.put(KEY_NAME, "'" + game.getName() + "'");
         values.put(KEY_PLATFORMID, game.getPlatformID());
-        values.put(KEY_LOGOURL, game.getLogoURL());
+        values.put(KEY_LOGOURL, "'" + game.getLogoURL() + "'");
+        values.put(KEY_LOGO, game.getLogoInBytes());
         values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
         values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
@@ -364,6 +361,48 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 selection,
                 selectionArgs);
     }
+    public void setGameAchievements(Game game){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // New value for one column
+        ContentValues values = new ContentValues();
+        values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
+        values.put(KEY_ACHIEVEMENTTOTALCOUNT, game.getAchievementsTotalCount());
+
+        // Which row to update, based on the ID
+        String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + game.getPlatformID();
+
+        int count = db.update(
+                TABLE_GAMES,
+                values,
+                selection,
+                null);
+
+        if(count == 0){
+            Log.e("","ERROR SAVING ACHIEVEMENTS");
+        }
+    }
+    public void setGameLogo(Game game){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // New value for one column
+        ContentValues values = new ContentValues();
+        values.put(KEY_LOGO, game.getLogoInBytes());
+
+        // Which row to update, based on the ID
+        String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + game.getPlatformID();
+
+        //TODO
+        int count = db.update(
+                TABLE_GAMES,
+                values,
+                selection,
+                null);
+
+        if(count == 0){
+            Log.e("","ERROR SAVING LOGO");
+        }
+    }
     public int getGameCount(String platformName, int sortType){
         SQLiteDatabase db;
         String countQuery;
@@ -373,8 +412,10 @@ public class SQLiteHelper extends SQLiteOpenHelper{
             countQuery = "SELECT " + KEY_ID + " FROM " + TABLE_PLATFORM + " WHERE " + KEY_NAME + " = '" + platformName + "'";
             db = this.getReadableDatabase();
             cursor = db.rawQuery(countQuery, null);
-            cursor.moveToFirst();
-            id = cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.KEY_ID));
+            if(cursor.getCount() > 0) {
+                cursor.moveToFirst();
+                id = cursor.getInt(cursor.getColumnIndexOrThrow(SQLiteHelper.KEY_ID));
+            }
         }
 
         countQuery = "SELECT  * FROM " + TABLE_GAMES;
@@ -393,5 +434,32 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         int cnt = cursor.getCount();
         cursor.close();
         return cnt;
+    }
+    public byte[] getGameLogo(Game game){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String[] columns = {
+                KEY_LOGO
+        };
+
+        String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + '"' + game.getPlatformID() + '"';
+
+        Cursor curTemp = db.query(
+                TABLE_GAMES,  // The table to query
+                columns,                                 // The columns to return
+                selection,                               // The columns for the WHERE clause
+                null,                           // The values for the WHERE clause
+                null,                                    // don't group the rows
+                null,                                    // don't filter by row groups
+                null                                // The sort order
+        );
+
+
+        Game gameTemp;
+        ArrayList gameArray = new ArrayList();
+        curTemp.moveToFirst();
+        byte[] logo = curTemp.getBlob(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGO));
+
+        return logo;
     }
 }

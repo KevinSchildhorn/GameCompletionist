@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Game Completionist</string>
+    <string name="app_name">Completionist</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="action_rename">Rename Platform</string>
@@ -31,7 +31,7 @@
         <item>Name</item>
         <item>Hours Played</item>
         <item>Recently Played</item>
-        <item>Purchase Date?</item>
+        <item>Achievements Earned</item>
         <item>Custom Order</item>
     </string-array>
 

@@ -2,6 +2,8 @@ package com.kevinschildhorn.gamecompletionist.HTTP;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -73,21 +75,40 @@ public class HTTPRequestHandler{
                 platform.getLogin());
         //if(isConnected()) {
         JSONObject steamIDJSON = sendRequest(requestURI);
-        try {
-            if(steamIDJSON.has("playerstats")) {
-                steamIDJSON = steamIDJSON.getJSONObject("playerstats");
-                if (steamIDJSON.has("achievements")) {
-                    JSONArray achievements = steamIDJSON.getJSONArray("achievements");
-                    if (achievements != null) {
-                        platform.getGameAtIndex(index).setAchievements(achievements);
+        if(steamIDJSON != null) {
+            try {
+                if (steamIDJSON.has("playerstats")) {
+                    steamIDJSON = steamIDJSON.getJSONObject("playerstats");
+                    if (steamIDJSON.has("achievements")) {
+                        JSONArray achievements = steamIDJSON.getJSONArray("achievements");
+                        if (achievements != null) {
+                            platform.getGameAtIndex(index).setAchievements(achievements);
 
+                        }
                     }
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
     }
+
+    public void requestGameLogo(Platform platform,int index){
+        if(platform.getGameAtIndex(index).getLogoURL()!= null ) {
+            Bitmap logoBitmap = null;
+            try {
+                InputStream in = new java.net.URL(platform.getGameAtIndex(index).getLogoURL()).openStream();
+                logoBitmap = BitmapFactory.decodeStream(in);
+                in.close();
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            platform.getGameAtIndex(index).setLogo(logoBitmap);
+        }
+    }
+
+
 
     // Processing
 

@@ -38,7 +38,7 @@ public class PlatformArrayAdapter extends ArrayAdapter<String> {
         TextView subtextView = (TextView) rowView.findViewById(R.id.secondLine);
         ImageView backgroundView = (ImageView) rowView.findViewById(R.id.imageView);
 
-        SQLiteHelper db = new SQLiteHelper(getContext());
+        SQLiteHelper db = SQLiteHelper.getInstance(getContext());
 
         int gameCount;
 
@@ -49,27 +49,6 @@ public class PlatformArrayAdapter extends ArrayAdapter<String> {
             backgroundView.setBackgroundColor(Color.LTGRAY);
             gameCount = db.getGameCount(values[position], getContext().getResources().getInteger(R.integer.all));
         }
-        // Unfinished
-        else if(values[position] == getContext().getString(R.string.unfinished)){
-            textView.setTextColor(Color.GRAY);
-            subtextView.setTextColor(Color.GRAY);
-            backgroundView.setBackgroundColor(Color.LTGRAY);
-            gameCount = db.getGameCount(values[position-1],getContext().getResources().getInteger(R.integer.unfinished));
-        }
-        // Finished
-        else if(values[position] == getContext().getString(R.string.finished)){
-            textView.setTextColor(Color.GRAY);
-            subtextView.setTextColor(Color.GRAY);
-            backgroundView.setBackgroundColor(Color.LTGRAY);
-            gameCount = db.getGameCount(values[position-2],getContext().getResources().getInteger(R.integer.finished));
-        }
-        // 100% Complete
-        else if(values[position] == getContext().getString(R.string.complete)){
-            textView.setTextColor(Color.GRAY);
-            subtextView.setTextColor(Color.GRAY);
-            backgroundView.setBackgroundColor(Color.LTGRAY);
-            gameCount = db.getGameCount(values[position-3],getContext().getResources().getInteger(R.integer.complete));
-        }
         // Add Platform
         else if(values[position] == getContext().getString(R.string.add_platform)){
             textView.setTextColor(Color.LTGRAY);
@@ -79,11 +58,11 @@ public class PlatformArrayAdapter extends ArrayAdapter<String> {
         }
         // Platform Name
         else {
-            textView.setTextColor(Color.LTGRAY);
+            textView.setTextColor(Color.DKGRAY);
             textView.setTypeface(Typeface.DEFAULT_BOLD);
-            subtextView.setTextColor(Color.LTGRAY);
-            subtextView.setBackgroundResource(R.drawable.count_background);
-            backgroundView.setBackgroundColor(Color.argb(255,151,37,37));
+            subtextView.setTextColor(Color.DKGRAY);
+            //subtextView.setBackgroundResource(R.drawable.count_background);
+            backgroundView.setBackgroundColor(Color.argb(255,171,171,62));
             gameCount = db.getGameCount(values[position],getContext().getResources().getInteger(R.integer.all));
         }
         textView.setText(values[position]);
@@ -91,8 +70,6 @@ public class PlatformArrayAdapter extends ArrayAdapter<String> {
         if(gameCount != -1) {
             subtextView.setText(gameCount + "");
         }
-
-        db.close();
 
         return rowView;
     }

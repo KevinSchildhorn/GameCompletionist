@@ -62,6 +62,16 @@ public class NavigationDrawerFragment extends Fragment {
     public NavigationDrawerFragment() {
     }
 
+    public static NavigationDrawerFragment newInstance() {
+        NavigationDrawerFragment myFragment = new NavigationDrawerFragment();
+
+        //Bundle args = new Bundle();
+        //args.putInt("someInt", someInt);
+        //myFragment.setArguments(args);
+
+        return myFragment;
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -192,6 +202,12 @@ public class NavigationDrawerFragment extends Fragment {
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
     }
 
+    public void resetPlatforms(){
+        SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+        platforms = db.getPlatforms();
+        refreshDrawer();
+    }
+
     private void selectItem(int position) {
         sp.edit().putInt("drawerPosition",position).apply();
 
@@ -204,7 +220,7 @@ public class NavigationDrawerFragment extends Fragment {
             mDrawerLayout.closeDrawer(mFragmentContainerView);
         }
         if (mCallbacks != null) {
-            mCallbacks.onNavigationDrawerItemSelected(position);
+            mCallbacks.onNavigationDrawerItemSelected((String)mDrawerListView.getItemAtPosition(position));
         }
     }
 
@@ -216,6 +232,7 @@ public class NavigationDrawerFragment extends Fragment {
 
                         final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                         builder.setTitle("Enter your Username");
+                        builder.setMessage("http://steamcommunity.com/id/");
                         builder.setIcon(R.drawable.ic_launcher);
 
                         // Set an EditText view to get user input
@@ -245,7 +262,8 @@ public class NavigationDrawerFragment extends Fragment {
 
     public void updatePlatforms(boolean updateTitle){
         // get new platforms
-        platforms = mCallbacks.getDatabase().getPlatforms();
+        SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+        platforms = db.getPlatforms();
 
         // set actionBar title
         if(updateTitle) {
@@ -262,17 +280,11 @@ public class NavigationDrawerFragment extends Fragment {
             ArrayList<String> drawerStrings = new ArrayList<String>();
 
             drawerStrings.add(getString(R.string.all));
-            drawerStrings.add(getString(R.string.unfinished));
-            drawerStrings.add(getString(R.string.finished));
-            drawerStrings.add(getString(R.string.complete));
 
             Platform platformTemp;
             for (int i=0;i<platforms.size();i++){
                 platformTemp = platforms.get(i);
                 drawerStrings.add(platformTemp.getName());
-                drawerStrings.add(getString(R.string.unfinished));
-                drawerStrings.add(getString(R.string.finished));
-                drawerStrings.add(getString(R.string.complete));
             }
             drawerStrings.add(getString(R.string.add_platform));
 
@@ -337,6 +349,7 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         if (item.getItemId() == R.id.action_edit) {
+            mCallbacks.onEditSelected();
             return true;
         }
         else if (item.getItemId() == R.id.action_change_direction) {
@@ -349,12 +362,14 @@ public class NavigationDrawerFragment extends Fragment {
         }
         else if (item.getItemId() == R.id.action_rename) {
             mCallbacks.onPlatformRenameSelected();
-            platforms = mCallbacks.getDatabase().getPlatforms();
+            SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+            platforms = db.getPlatforms();
             return true;
         }
         else if (item.getItemId() == R.id.action_delete) {
             mCallbacks.onPlatformDeleteSelected();
-            platforms = mCallbacks.getDatabase().getPlatforms();
+            SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+            platforms = db.getPlatforms();
             return true;
         }
 
@@ -403,13 +418,13 @@ public class NavigationDrawerFragment extends Fragment {
         /**
          * Called when an item in the navigation drawer is selected.
          */
-        void onNavigationDrawerItemSelected(int position);
+        void onNavigationDrawerItemSelected(String platformName);
         void onSortTypeSelected(int sortType);
         void onSortDirectionSelected(boolean sortAsc);
         void onPlatformDeleteSelected();
         void onPlatformRenameSelected();
         void requestNewPlatform(int platformType,String text);
-        SQLiteHelper getDatabase();
+        void onEditSelected();
     }
 }
 

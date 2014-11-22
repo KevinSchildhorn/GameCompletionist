@@ -1,15 +1,14 @@
 package com.kevinschildhorn.gamecompletionist.DataClasses;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
-
-import com.kevinschildhorn.gamecompletionist.HTTP.HTTPRequestHandler;
-import com.kevinschildhorn.gamecompletionist.SQLiteHelper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
+import java.io.ByteArrayOutputStream;
 
 /**
  * SCM Products Inc.
@@ -23,6 +22,7 @@ public class Game {
     private String name;                // DONE - requestGameInfo
     private int platformID;             // DONE - parent
     private String logoURL;             // DONE - requestGameInfo
+    private Bitmap logo;
     private int minutesPlayed;        // DONE - requestGameInfo
     private int recentMinutesPlayed;  // DONE - requestGameInfo/requestRecentGames
     private int achievementsFinishedCount;       // DONE - requestAchievements
@@ -33,7 +33,7 @@ public class Game {
     public int customSortTypeIndex;
 
 
-    public Game (int id, String name, int platformID,String logoURL, int minutesPlayed, int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount, int completionStatus,int customSortTypeIndex){
+    public Game (int id, String name, int platformID,String logoURL, byte[] logo,int minutesPlayed, int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount, int completionStatus,int customSortTypeIndex){
         // initialize
         this.id = id;
         this.name = name;
@@ -41,11 +41,18 @@ public class Game {
             this.name = this.name.substring(4) + ", The";
         }
         this.platformID = platformID;
-        if(logoURL.startsWith("http://")){
-            this.logoURL = logoURL;
+        if(logoURL == null) {
+            logoURL = "";
         }
-        else {
+
+        if (logoURL.startsWith("http://")) {
+            this.logoURL = logoURL;
+        } else if (!logoURL.isEmpty()) {
             this.logoURL = "http://media.steampowered.com/steamcommunity/public/images/apps/" + id + "/" + logoURL + ".jpg";
+        }
+
+        if(logo != null) {
+            this.logo = BitmapFactory.decodeByteArray(logo, 0, logo.length);
         }
         this.minutesPlayed = minutesPlayed;
         this.recentMinutesPlayed = recentMinutesPlayed;
@@ -78,6 +85,17 @@ public class Game {
     public String getLogoURL(){
         return this.logoURL;
     }
+    public Bitmap getLogo(){return  this.logo;}
+    public byte[] getLogoInBytes(){
+        if(this.logo != null) {
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            this.logo.compress(Bitmap.CompressFormat.PNG, 100, stream);
+            return stream.toByteArray();
+        }
+        else{
+            return new byte[0];
+        }
+    }
     public int getMinutesPlayed(){
         return this.minutesPlayed;
     }
@@ -108,5 +126,7 @@ public class Game {
 
         Log.e("", this.achievementsFinishedCount + "/" + this.achievementsTotalCount + " Achievements");
     }
-
+    public void setLogo(Bitmap logo){
+        this.logo = logo;
+    }
 }
