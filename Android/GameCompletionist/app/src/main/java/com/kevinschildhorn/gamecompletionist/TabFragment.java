@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.ActionMode;
@@ -23,6 +24,7 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.kevinschildhorn.gamecompletionist.DynamicListView;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
@@ -42,7 +44,7 @@ public class TabFragment extends Fragment {
 
     private static final String ARG_SECTION_NUMBER = "section_number";
 
-    ListView listview;
+    DynamicListView listview;   // DYNAMICTEST
     TextView mInformationTextView;
     ProgressBar mLoadingSpinner;
     TextView mAchievementLoadingInfo;
@@ -83,12 +85,11 @@ public class TabFragment extends Fragment {
         this.filterType = getArguments().getInt("tabNumber", 0);
         this.platformState = getArguments().getInt("state", 0);
         // List View
-        listview = (ListView ) rootView.findViewById(R.id.listView);
+        listview = (DynamicListView ) rootView.findViewById(R.id.listView); // DYNAMICTEST
         listview.setBackgroundColor(Color.WHITE);
-        listview.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-
-        listview.setOnItemLongClickListener(longClickListener);
         listview.setOnItemClickListener(itemClickListener);
+        listview.setOnItemLongClickListener(longClickListener);
+
 
         mInformationTextView = (TextView) rootView.findViewById(R.id.textInfo);
         mInformationTextView.setBackgroundColor(Color.argb(100,0,0,0));
@@ -131,22 +132,8 @@ public class TabFragment extends Fragment {
         sortType =  m_settingsSP.getInt(getString(R.string.sort_type),-1);
         sortDirectionAscending = m_settingsSP.getBoolean(getString(R.string.sort_Direction),true);
 
-        if(platformID != -1) {
-            SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
-            Platform platform = db.getPlatform(platformID, sortType, filterType,sortDirectionAscending);
-            updateListView(platform, sortType, queryText);
-        }
-        else{
-            SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
-            Platform platform = new Platform(0,"","",0,"",db.getGames(platformID,filterType,sortType,sortDirectionAscending));
-            if(platform.getGames().length == 0){
-                mInformationTextView.setVisibility(View.VISIBLE);
-                mInformationTextView.setText("You don't have any platforms! Please add a platform from the drawer");
-            }
-            else{
-                updateListView(platform, sortType, queryText);
-            }
-        }
+        new UpdatePlatformAsyncTask().execute();
+
     }
     public void updateListView(Platform platform,int sortType,String filterString){
 
@@ -171,22 +158,18 @@ public class TabFragment extends Fragment {
             }
         }
         // Set up the adapter
-        Game[] gamesFiltered = gameArrayList.toArray(new Game[gameArrayList.size()]);
+        //Game[] gamesFiltered = gameArrayList.toArray(new Game[gameArrayList.size()]);
 
 
-        //if (sortType == getResources().getInteger(R.integer.customOrder)) {
-          //  listview.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-
-           // customSortAdapter = new StableArrayAdapter(getActivity(),R.layout.text, gameNameArrayList);
-           // listview.setCheeseList(gameNameArrayList);
-           // listview.setAdapter(customSortAdapter);
-
-           //adapter = new GameArrayAdapter(getActivity().getApplicationContext(), gamesFiltered, true);
-        //} else {
-            adapter = new GameArrayAdapter(getActivity().getApplicationContext(), gamesFiltered);
-            adapter.SetSortType(sortType);
-            listview.setAdapter(adapter);
-        //}
+        if (sortType == getResources().getInteger(R.integer.customOrder)) {
+            listview.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+            adapter = new GameArrayAdapter(getActivity().getApplicationContext(),R.layout.fragment_main_sorted_cell , gameArrayList);
+        } else {
+            listview.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+            adapter = new GameArrayAdapter(getActivity().getApplicationContext(),R.layout.fragment_main_cell , gameArrayList);
+        }
+        adapter.SetSortType(sortType);
+        listview.setAdapter(adapter);
     }
 
     //endregion
@@ -195,10 +178,15 @@ public class TabFragment extends Fragment {
     AdapterView.OnItemLongClickListener longClickListener = new AdapterView.OnItemLongClickListener() {
 
         public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-            if(editingList == false) {
-                enableEditing();
-                adapter.SelectItemAtIndex(position);
-                view.setSelected(true);
+            if (sortType == getResources().getInteger(R.integer.customOrder)) {
+                listview.onItemLongClick();
+            }
+            else{
+                if (editingList == false) {
+                    enableEditing();
+                    adapter.SelectItemAtIndex(position);
+                    view.setSelected(true);
+                }
             }
             return true;
         }
@@ -325,7 +313,35 @@ public class TabFragment extends Fragment {
     public void setQueryText(String queryText){
         this.queryText = queryText;
         updatePlatform();
+
     }
+
+    private class UpdatePlatformAsyncTask extends AsyncTask<Integer, Void, Platform> {
+        @Override
+        protected Platform doInBackground(Integer... text) {
+            Platform platform;
+            if(platformID != -1) {
+                SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+                platform = db.getPlatform(platformID, sortType, filterType,sortDirectionAscending);
+            }
+            else{
+                SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
+                platform = new Platform(0,"","",0,"",db.getGames(platformID,filterType,sortType,sortDirectionAscending));
+            }
+            return platform;
+        }
+        protected void onPostExecute(Platform result) {
+            if(result.getGames().length == 0){
+                mInformationTextView.setVisibility(View.VISIBLE);
+                mInformationTextView.setText("You don't have any platforms! Please add a platform from the drawer");
+            }
+            else{
+                updateListView(result, sortType, queryText);
+            }
+        }
+    }
+
+
     private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
 
         boolean actionSelected = false;
@@ -366,6 +382,10 @@ public class TabFragment extends Fragment {
                     return true;
 
                 case R.id.cancel:
+                    adapter.UnselectAllItems();
+                    for ( int i=0; i< listview.getAdapter().getCount(); i++ ) {
+                        listview.setItemChecked(i, false);
+                    }
                     actionSelected = true;
                     mode.finish(); // Action picked, so close the CAB
                     return true;

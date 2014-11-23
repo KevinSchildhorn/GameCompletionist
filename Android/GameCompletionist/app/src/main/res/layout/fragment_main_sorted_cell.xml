@@ -14,7 +14,6 @@
         android:ellipsize="marquee"
         android:singleLine="true"
         android:paddingEnd="10sp"
-        android:text="199"
         android:gravity="center"
         android:textSize="25sp" />
 
@@ -51,7 +50,6 @@
             android:layout_toRightOf="@id/icon"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:text="Description"
             android:textSize="12sp" />
 
         <TextView
@@ -64,21 +62,7 @@
             android:layout_toRightOf="@id/icon"
             android:layout_alignTop="@+id/imageView"
             android:gravity="left|bottom"
-            android:text="Game"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/teritaryInfo"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignWithParentIfMissing="true"
-            android:gravity="center_vertical|right"
-            android:layout_marginRight="10sp"
-            android:text="Example"
-            android:textSize="12sp"
-            android:layout_alignParentBottom="true"
-            android:layout_below="@+id/gameName"
-            android:layout_toEndOf="@+id/icon" />
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/achievements"
@@ -91,7 +75,6 @@
             android:layout_alignBottom="@+id/gameName"
             android:textSize="16sp"
             android:gravity="center_vertical|right"
-            android:text="test"
             android:layout_below="@+id/gameName" />
 
     </RelativeLayout>

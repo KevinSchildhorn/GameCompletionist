@@ -30,6 +30,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -38,6 +39,9 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 
+import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -67,8 +71,6 @@ public class DynamicListView extends ListView {
     private final int MOVE_DURATION = 150;
     private final int LINE_THICKNESS = 15;
 
-    public ArrayList<String> mCheeseList;
-
     private int mLastEventY = -1;
 
     private int mDownY = -1;
@@ -89,6 +91,9 @@ public class DynamicListView extends ListView {
     private Rect mHoverCellCurrentBounds;
     private Rect mHoverCellOriginalBounds;
 
+    View selectedView;
+
+    boolean editingList;
     private final int INVALID_POINTER_ID = -1;
     private int mActivePointerId = INVALID_POINTER_ID;
 
@@ -111,7 +116,7 @@ public class DynamicListView extends ListView {
     }
 
     public void init(Context context) {
-        setOnItemLongClickListener(mOnItemLongClickListener);
+        //setOnItemLongClickListener(mOnItemLongClickListener);
         setOnScrollListener(mScrollListener);
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         mSmoothScrollAmountAtEdge = (int)(SMOOTH_SCROLL_AMOUNT_AT_EDGE / metrics.density);
@@ -121,26 +126,25 @@ public class DynamicListView extends ListView {
      * Listens for long clicks on any items in the listview. When a cell has
      * been selected, the hover cell is created and set up.
      */
-    private AdapterView.OnItemLongClickListener mOnItemLongClickListener =
-            new AdapterView.OnItemLongClickListener() {
-                public boolean onItemLongClick(AdapterView<?> arg0, View arg1, int pos, long id) {
-                    mTotalOffset = 0;
 
-                    int position = pointToPosition(mDownX, mDownY);
-                    int itemNum = position - getFirstVisiblePosition();
+    public void onItemLongClick(){
+        mTotalOffset = 0;
 
-                    View selectedView = getChildAt(itemNum);
-                    mMobileItemId = getAdapter().getItemId(position);
-                    mHoverCell = getAndAddHoverView(selectedView);
-                    selectedView.setVisibility(INVISIBLE);
+        int position = pointToPosition(mDownX, mDownY);
+        int itemNum = position - getFirstVisiblePosition();
 
-                    mCellIsMobile = true;
+        View selectedView = getChildAt(itemNum);
+        mMobileItemId = getAdapter().getItemId(position);
+        mHoverCell = getAndAddHoverView(selectedView);
+        selectedView.setVisibility(View.INVISIBLE);
 
-                    updateNeighborViewsForID(mMobileItemId);
+        GameArrayAdapter adapter = (GameArrayAdapter)getAdapter();
+        adapter.setHoverItem(itemNum);
 
-                    return true;
-                }
-            };
+        mCellIsMobile = true;
+
+        updateNeighborViewsForID(mMobileItemId);
+    }
 
     /**
      * Creates the hover cell with the appropriate bitmap and of appropriate
@@ -200,7 +204,7 @@ public class DynamicListView extends ListView {
      */
     private void updateNeighborViewsForID(long itemID) {
         int position = getPositionForID(itemID);
-        StableArrayAdapter adapter = ((StableArrayAdapter)getAdapter());
+        GameArrayAdapter adapter = ((GameArrayAdapter)getAdapter());
         mAboveItemId = adapter.getItemId(position - 1);
         mBelowItemId = adapter.getItemId(position + 1);
     }
@@ -208,7 +212,7 @@ public class DynamicListView extends ListView {
     /** Retrieves the view in the list corresponding to itemID */
     public View getViewForID (long itemID) {
         int firstVisiblePosition = getFirstVisiblePosition();
-        StableArrayAdapter adapter = ((StableArrayAdapter)getAdapter());
+        GameArrayAdapter adapter = ((GameArrayAdapter)getAdapter());
         for(int i = 0; i < getChildCount(); i++) {
             View v = getChildAt(i);
             int position = firstVisiblePosition + i;
@@ -332,7 +336,8 @@ public class DynamicListView extends ListView {
                 return;
             }
 
-            swapElements(mCheeseList, originalItem, getPositionForView(switchView));
+
+            swapElements(originalItem, getPositionForView(switchView));
 
             ((BaseAdapter) getAdapter()).notifyDataSetChanged();
 
@@ -340,8 +345,8 @@ public class DynamicListView extends ListView {
 
             final int switchViewStartTop = switchView.getTop();
 
-            mobileView.setVisibility(View.VISIBLE);
-            switchView.setVisibility(View.INVISIBLE);
+            //mobileView.setVisibility(View.VISIBLE);
+            //switchView.setVisibility(View.INVISIBLE);
 
             updateNeighborViewsForID(mMobileItemId);
 
@@ -370,10 +375,15 @@ public class DynamicListView extends ListView {
         }
     }
 
-    private void swapElements(ArrayList arrayList, int indexOne, int indexTwo) {
-        Object temp = arrayList.get(indexOne);
+    private void swapElements(int indexOne, int indexTwo) {
+        GameArrayAdapter adapter = (GameArrayAdapter)getAdapter();
+        ArrayList<Game> arrayList = adapter.getArrayList();
+
+        Game temp = arrayList.get(indexOne);
         arrayList.set(indexOne, arrayList.get(indexTwo));
         arrayList.set(indexTwo, temp);
+
+        adapter.setArrayList(arrayList);
     }
 
 
@@ -419,6 +429,10 @@ public class DynamicListView extends ListView {
                     mMobileItemId = INVALID_ID;
                     mBelowItemId = INVALID_ID;
                     mobileView.setVisibility(VISIBLE);
+
+                    GameArrayAdapter adapter = (GameArrayAdapter)getAdapter();
+                    adapter.setHoverItem(-1);
+
                     mHoverCell = null;
                     setEnabled(true);
                     invalidate();
@@ -498,10 +512,6 @@ public class DynamicListView extends ListView {
         }
 
         return false;
-    }
-
-    public void setCheeseList(ArrayList<String> cheeseList) {
-        mCheeseList = cheeseList;
     }
 
     /**

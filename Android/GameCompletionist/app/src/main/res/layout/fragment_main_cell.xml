@@ -33,7 +33,6 @@
             android:layout_toRightOf="@id/icon"
             android:ellipsize="marquee"
             android:singleLine="true"
-            android:text="Description"
             android:textSize="12sp" />
 
         <TextView
@@ -46,7 +45,6 @@
             android:layout_toRightOf="@id/icon"
             android:layout_alignTop="@+id/imageView"
             android:gravity="left|bottom"
-            android:text="Game"
             android:textSize="18sp" />
 
         <TextView

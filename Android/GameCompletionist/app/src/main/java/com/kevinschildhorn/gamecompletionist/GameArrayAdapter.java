@@ -13,6 +13,8 @@ import android.widget.TextView;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 
+import org.w3c.dom.Text;
+
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,35 +26,28 @@ import java.util.HashMap;
 
 public class GameArrayAdapter extends ArrayAdapter<Game> {
     private final Context context;
-    private Game[] values;
+    private ArrayList<Game> values;
     private int sortType = 0;
     private ArrayList<Integer> selectedItemIndexes;
     boolean customSortType;
-
+    int layoutID;
+    String hoverGameName;
     HashMap<Game, Integer> mIdMap = new HashMap<Game, Integer>();
 
     final int INVALID_ID = -1;
 
+    public GameArrayAdapter(Context context, int layoutID,ArrayList<Game>  values) {
+        super(context, layoutID, values);
 
-    public GameArrayAdapter(Context context, Game[] values) {
-        super(context, R.layout.fragment_main_cell, values);
+        for (int i = 0; i < values.size(); ++i) {
+            mIdMap.put(values.get(i), i);
+        }
 
+        this.layoutID = layoutID;
         this.customSortType = false;
         this.context = context;
         this.values = values;
-        selectedItemIndexes = new ArrayList<Integer>();
-    }
-
-    public GameArrayAdapter(Context context, int layoutID,Game[]  values) {
-        super(context, layoutID, values);
-
-        for (int i = 0; i < values.length; ++i) {
-            mIdMap.put(values[i], i);
-        }
-
-        this.customSortType = customSortType;
-        this.context = context;
-        this.values = values;
+        this.hoverGameName = "";
         selectedItemIndexes = new ArrayList<Integer>();
     }
 
@@ -78,7 +73,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
     //region Selection
 
     public Game GetItemAtIndex(int position){
-        return values[position];
+        return values.get(position);
     }
     public void SelectItemAtIndex(int position){
         selectedItemIndexes.add(position);
@@ -89,7 +84,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
 
     public void SelectAllItems(){
         UnselectAllItems();
-        for(int i=0;i<values.length;i++){
+        for(int i=0;i<values.size();i++){
             selectedItemIndexes.add(i);
         }
     }
@@ -101,21 +96,45 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         return this.selectedItemIndexes;
     }
 
+    public void setHoverItem(int position){
+        if(position != -1) {
+            this.hoverGameName = values.get(position).getName();
+        }
+        else{
+            this.hoverGameName = "";
+        }
+    }
     //endregion
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
+
         LayoutInflater inflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View rowView = inflater.inflate(R.layout.fragment_main_cell, parent, false);
+        View rowView = inflater.inflate(this.layoutID, parent, false);
         TextView textView = (TextView) rowView.findViewById(R.id.gameName);
         TextView secondaryTextView = (TextView) rowView.findViewById(R.id.secondaryInfo);
-        //TextView tertiaryTextView = (TextView) rowView.findViewById(R.id.teritaryInfo);
         TextView achievementTextView = (TextView) rowView.findViewById(R.id.achievements);
         ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
+        TextView orderNumberView = (TextView) rowView.findViewById(R.id.orderNumber);
 
-        Game temp = values[position];
+        // hide selected game
+        Game temp = values.get(position);
+        if(temp.getName() == hoverGameName){
+            rowView.setVisibility(View.INVISIBLE);
+        }
+
+        // set order number
+        if(orderNumberView != null){
+            orderNumberView.setText(position+1 + "");
+        }
+
+        if(this.layoutID == R.layout.fragment_main_sorted_cell){
+            values.get(position).customSortTypeIndex = position;
+        }
+
+        // fill in row
         textView.setText(temp.getName());
         textView.setTextColor(Color.BLACK);
         if(temp.getAchievementsTotalCount() > 0) {
@@ -186,18 +205,18 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         SQLiteHelper db = SQLiteHelper.getInstance(context);
         byte[] logo = db.getGameLogo(temp);
 
-        if(logo.length > 0){
+        if(logo.length > 0) {
             Bitmap logoBitmap = BitmapFactory.decodeByteArray(logo, 0, logo.length);
-
-            //if (logoBitmap != null && !logoBitmap.isRecycled()) {
-                imageView.setImageBitmap(logoBitmap);
-              //  logoBitmap.recycle();
-              //  logoBitmap = null;
-            //}
+            imageView.setImageBitmap(logoBitmap);
         }
 
         return rowView;
     }
 
-
+    public void setArrayList(ArrayList<Game> games){
+        this.values = games;
+    }
+    public ArrayList<Game> getArrayList(){
+        return this.values;
+    }
 }
