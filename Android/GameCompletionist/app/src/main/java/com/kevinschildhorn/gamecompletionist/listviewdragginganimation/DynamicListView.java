@@ -139,7 +139,7 @@ public class DynamicListView extends ListView {
         selectedView.setVisibility(View.INVISIBLE);
 
         GameArrayAdapter adapter = (GameArrayAdapter)getAdapter();
-        adapter.setHoverItem(itemNum);
+        adapter.setHoverItem(position);
 
         mCellIsMobile = true;
 

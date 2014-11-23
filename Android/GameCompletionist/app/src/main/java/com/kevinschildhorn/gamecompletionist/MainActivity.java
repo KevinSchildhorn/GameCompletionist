@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
@@ -86,6 +87,12 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         actionBar.setBackgroundDrawable(new ColorDrawable(Color.argb(255,67,36,102)));
         actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.WHITE));
         actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.argb(255,67,36,102)));
+
+
+        for(int i=0;i<platformArray.size();i++) {
+            mPlatformHandler.RequestUpdatedGameListFromServer((Platform)platformArray.get(i));
+        }
+
     }
     @Override
     protected void onDestroy(){

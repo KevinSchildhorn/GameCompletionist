@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.AsyncTask;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
+import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
 
 import org.w3c.dom.Text;
 
@@ -119,9 +122,10 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
         TextView orderNumberView = (TextView) rowView.findViewById(R.id.orderNumber);
 
-        // hide selected game
+        // hide selected game CHECK
         Game temp = values.get(position);
         if(temp.getName() == hoverGameName){
+            Log.e("",hoverGameName);
             rowView.setVisibility(View.INVISIBLE);
         }
 
@@ -131,7 +135,10 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         }
 
         if(this.layoutID == R.layout.fragment_main_sorted_cell){
-            values.get(position).customSortTypeIndex = position;
+            if(values.get(position).customSortTypeIndex != position) {
+                new updateCustomOrderAsyncTask().execute(position);
+
+            }
         }
 
         // fill in row
@@ -218,5 +225,17 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
     }
     public ArrayList<Game> getArrayList(){
         return this.values;
+    }
+
+
+    private class updateCustomOrderAsyncTask extends AsyncTask<Integer, Void, Void> {
+        @Override
+        protected Void doInBackground(Integer... positions) {
+            int position = positions[0];
+            values.get(position).customSortTypeIndex = position;
+            SQLiteHelper.getInstance(context).setGameCustomSortTypeIndex(values.get(position));
+            return null;
+
+        }
     }
 }

@@ -288,7 +288,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 sortTypeText = KEY_ACHIEVEMENTSFINISHEDCOUNT;
                 break;
             case 4:
-                sortTypeText = KEY_NAME;
+                sortTypeText = KEY_CUSTOMSORTINDEX;
                 break;
         }
         if(sortAscending){
@@ -340,9 +340,9 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         // New value for one column
         ContentValues values = new ContentValues();
         //values.put(KEY_ID, game.id);
-        values.put(KEY_NAME, "'" + game.getName() + "'");
+        values.put(KEY_NAME,game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
-        values.put(KEY_LOGOURL, "'" + game.getLogoURL() + "'");
+        values.put(KEY_LOGOURL,game.getLogoURL());
         values.put(KEY_LOGO, game.getLogoInBytes());
         values.put(KEY_MINUTESPLAYED, game.getMinutesPlayed());
         values.put(KEY_RECENTMINUTESPLAYED, game.getRecentMinutesPlayed());
@@ -379,7 +379,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 null);
 
         if(count == 0){
-            Log.e("","ERROR SAVING ACHIEVEMENTS");
+           // Log.e("","ERROR SAVING ACHIEVEMENTS");
         }
     }
     public void setGameLogo(Game game){
@@ -400,7 +400,28 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 null);
 
         if(count == 0){
-            Log.e("","ERROR SAVING LOGO");
+           // Log.e("","ERROR SAVING LOGO");
+        }
+    }
+    public void setGameCustomSortTypeIndex(Game game){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // New value for one column
+        ContentValues values = new ContentValues();
+        values.put(KEY_CUSTOMSORTINDEX, game.customSortTypeIndex);
+
+        // Which row to update, based on the ID
+        String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + game.getPlatformID();
+
+        //TODO
+        int count = db.update(
+                TABLE_GAMES,
+                values,
+                selection,
+                null);
+
+        if(count == 0){
+             Log.e("","ERROR SAVING Custom Sort");
         }
     }
     public int getGameCount(String platformName, int sortType){

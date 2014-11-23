@@ -24,15 +24,10 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.kevinschildhorn.gamecompletionist.DynamicListView;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
-import com.kevinschildhorn.gamecompletionist.StableArrayAdapter;
 
-
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -44,13 +39,12 @@ public class TabFragment extends Fragment {
 
     private static final String ARG_SECTION_NUMBER = "section_number";
 
-    DynamicListView listview;   // DYNAMICTEST
+    com.kevinschildhorn.gamecompletionist.DynamicListView listview;
     TextView mInformationTextView;
     ProgressBar mLoadingSpinner;
     TextView mAchievementLoadingInfo;
 
     GameArrayAdapter adapter;
-    StableArrayAdapter customSortAdapter;
     Platform currentPlatform;
 
     boolean editingList = false;
@@ -184,8 +178,8 @@ public class TabFragment extends Fragment {
             else{
                 if (editingList == false) {
                     enableEditing();
-                    adapter.SelectItemAtIndex(position);
-                    view.setSelected(true);
+                    //adapter.SelectItemAtIndex(position);
+                    //view.setSelected(true);
                 }
             }
             return true;
@@ -331,11 +325,11 @@ public class TabFragment extends Fragment {
             return platform;
         }
         protected void onPostExecute(Platform result) {
-            if(result.getGames().length == 0){
+            if(result.getName().isEmpty()){
                 mInformationTextView.setVisibility(View.VISIBLE);
                 mInformationTextView.setText("You don't have any platforms! Please add a platform from the drawer");
             }
-            else{
+            if(isAdded()) {
                 updateListView(result, sortType, queryText);
             }
         }

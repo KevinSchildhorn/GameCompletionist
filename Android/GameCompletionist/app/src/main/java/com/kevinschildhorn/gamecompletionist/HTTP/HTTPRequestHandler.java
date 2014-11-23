@@ -101,7 +101,7 @@ public class HTTPRequestHandler{
                 logoBitmap = BitmapFactory.decodeStream(in);
                 in.close();
             } catch (Exception e) {
-                Log.e("Error", e.getMessage());
+                //Log.e("Error", e.getMessage());
                 e.printStackTrace();
             }
             platform.getGameAtIndex(index).setLogo(logoBitmap);

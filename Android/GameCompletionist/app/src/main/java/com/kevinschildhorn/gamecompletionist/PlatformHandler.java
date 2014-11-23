@@ -62,6 +62,8 @@ public class PlatformHandler{
             new getGameLogoAsyncTask().execute(result);
         }
     }
+
+
     private class UpdatedPlatformAsyncTask extends AsyncTask<Platform, Void, ArrayList<Game>> {
         @Override
         protected ArrayList<Game> doInBackground(Platform... platforms) {
@@ -74,6 +76,8 @@ public class PlatformHandler{
             mCallback.onUpdatedIncomingPlatform(result);
         }
     }
+
+
     private class getGameLogoAsyncTask extends AsyncTask<Platform, Void, Platform> {
 
         @Override

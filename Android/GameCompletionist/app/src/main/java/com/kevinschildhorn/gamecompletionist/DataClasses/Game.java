@@ -124,7 +124,7 @@ public class Game {
             this.achievementsTotalCount++;
         }
 
-        Log.e("", this.achievementsFinishedCount + "/" + this.achievementsTotalCount + " Achievements");
+        //Log.e("", this.achievementsFinishedCount + "/" + this.achievementsTotalCount + " Achievements");
     }
     public void setLogo(Bitmap logo){
         this.logo = logo;
