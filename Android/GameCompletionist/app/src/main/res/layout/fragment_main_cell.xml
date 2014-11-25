@@ -15,9 +15,8 @@
             android:layout_height="fill_parent"
             android:layout_alignParentBottom="true"
             android:layout_alignParentTop="true"
-            android:layout_marginLeft="10sp"
-            android:layout_marginRight="6dip"
-            android:layout_toEndOf="@+id/orderNumber"
+            android:layout_marginStart="10sp"
+            android:layout_marginEnd="6dip"
             android:contentDescription="GameIcon"
             android:src="@drawable/ic_launcher" />
 
@@ -25,11 +24,9 @@
 
         <TextView
             android:id="@+id/secondaryInfo"
-            android:layout_width="fill_parent"
+            android:layout_width="wrap_content"
             android:layout_height="26dip"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignBottom="@+id/imageView"
             android:layout_toRightOf="@id/icon"
             android:ellipsize="marquee"
             android:singleLine="true"
@@ -42,30 +39,29 @@
             android:layout_above="@id/secondaryInfo"
             android:layout_alignParentTop="true"
             android:layout_alignWithParentIfMissing="true"
-            android:layout_toRightOf="@id/icon"
-            android:layout_alignTop="@+id/imageView"
-            android:gravity="left|bottom"
+            android:layout_toEndOf="@id/icon"
+            android:gravity="start|bottom"
             android:textSize="18sp" />
 
-        <TextView
+        <ImageView
             android:id="@+id/teritaryInfo"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="30sp"
+            android:layout_height="15sp"
             android:layout_alignWithParentIfMissing="true"
-            android:gravity="center_vertical|right"
-            android:layout_marginRight="10sp"
+            android:gravity="center_vertical|end"
+            android:layout_marginEnd="10sp"
+            android:layout_alignParentEnd="true"
             android:textSize="12sp"
-            android:layout_alignParentBottom="true"
             android:layout_below="@+id/gameName"
-            android:layout_toEndOf="@+id/icon" />
+            android:layout_toEndOf="@+id/secondaryInfo" />
 
         <TextView
             android:id="@+id/achievements"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_alignWithParentIfMissing="true"
-            android:layout_marginRight="10sp"
-            android:layout_toRightOf="@+id/gameName"
+            android:layout_marginEnd="10sp"
+            android:layout_toEndOf="@+id/gameName"
             android:layout_alignTop="@+id/gameName"
             android:layout_alignBottom="@+id/gameName"
             android:textSize="12sp"

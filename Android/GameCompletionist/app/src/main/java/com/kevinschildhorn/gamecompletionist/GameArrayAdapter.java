@@ -118,6 +118,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
         View rowView = inflater.inflate(this.layoutID, parent, false);
         TextView textView = (TextView) rowView.findViewById(R.id.gameName);
         TextView secondaryTextView = (TextView) rowView.findViewById(R.id.secondaryInfo);
+        ImageView teritaryInfo = (ImageView) rowView.findViewById(R.id.teritaryInfo);
         TextView achievementTextView = (TextView) rowView.findViewById(R.id.achievements);
         ImageView imageView = (ImageView) rowView.findViewById(R.id.icon);
         TextView orderNumberView = (TextView) rowView.findViewById(R.id.orderNumber);
@@ -131,7 +132,7 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
 
         // set order number
         if(orderNumberView != null){
-            orderNumberView.setText(position+1 + "");
+            orderNumberView.setText(temp.customSortTypeIndex+1 + "");
         }
 
         if(this.layoutID == R.layout.fragment_main_sorted_cell){
@@ -139,6 +140,14 @@ public class GameArrayAdapter extends ArrayAdapter<Game> {
                 new updateCustomOrderAsyncTask().execute(position);
 
             }
+        }
+
+
+        if(temp.getControllerSupport() == 1){
+            teritaryInfo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.partialcontrollersupport));
+        }
+        else if(temp.getControllerSupport() == 2){
+            teritaryInfo.setImageDrawable(getContext().getResources().getDrawable(R.drawable.fullcontrollersupport));
         }
 
         // fill in row

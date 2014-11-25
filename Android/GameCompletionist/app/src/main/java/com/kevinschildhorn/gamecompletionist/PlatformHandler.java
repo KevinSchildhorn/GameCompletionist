@@ -125,15 +125,37 @@ public class PlatformHandler{
         protected void onPostExecute(Platform result) {
             mCallback.onNewIncomingPlatform(result);
             Toast.makeText(mContext,"Achievements Loaded",Toast.LENGTH_LONG).show();
+            new getControllerSupportAsynctask().execute(result);
         }
     }
+    private class getControllerSupportAsynctask extends AsyncTask<Platform, Void, Platform> {
+        @Override
+        protected Platform doInBackground(Platform... platforms) {
+            Platform platform = platforms[0];
+            for(int i=0;i<platform.getGames().length;i++) {
+                SQLiteHelper db = SQLiteHelper.getInstance(mContext);
+                platform.updateGameControllerSupportAtIndex(i, mRequestHandler, db);
 
+                Intent intent = new Intent();
+                intent.setAction("updateDownloadInfo");
+                intent.putExtra("type",2);
+                intent.putExtra("finished",i);
+                intent.putExtra("total",platform.getGames().length);
+                mContext.sendBroadcast(intent);
+            }
+            return platform;
+        }
+
+        protected void onPostExecute(Platform result) {
+            mCallback.onNewIncomingPlatform(result);
+            Toast.makeText(mContext,"Controller Support Loaded",Toast.LENGTH_LONG).show();
+        }
+    }
 
 
 
     public static interface PlatformGeneratorCallbacks {
         void onNewIncomingPlatform(Platform platform);
         void onUpdatedIncomingPlatform(ArrayList<Game> games);
-        void onOnUpdatedAchievements(int finishedCount,int totalCount);
     }
 }

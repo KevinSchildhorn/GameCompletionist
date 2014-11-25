@@ -44,6 +44,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     public static final String KEY_ACHIEVEMENTTOTALCOUNT = "AchievementTotalCount";
     public static final String KEY_COMPLETIONSTATUS = "CompletionStatus";
     public static final String KEY_CUSTOMSORTINDEX = "CustomSortIndex";
+    public static final String KEY_CONTROLLERSUPPORT = "ControllerSupport";
 
     public static SQLiteHelper getInstance(Context context) {
 
@@ -82,7 +83,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_ACHIEVEMENTSFINISHEDCOUNT + " INT," +
                 KEY_ACHIEVEMENTTOTALCOUNT + " INT," +
                 KEY_COMPLETIONSTATUS + " INT," +
-                KEY_CUSTOMSORTINDEX + " INT" +
+                KEY_CUSTOMSORTINDEX + " INT," +
+                KEY_CONTROLLERSUPPORT + " INT" +
                 ")";
 
         db.execSQL(CREATE_PLATFORM_TABLE);
@@ -259,7 +261,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_ACHIEVEMENTSFINISHEDCOUNT,
                 KEY_ACHIEVEMENTTOTALCOUNT,
                 KEY_COMPLETIONSTATUS,
-                KEY_CUSTOMSORTINDEX
+                KEY_CUSTOMSORTINDEX,
+                KEY_CONTROLLERSUPPORT
         };
 
         String selection = "";
@@ -326,7 +329,8 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTSFINISHEDCOUNT)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ACHIEVEMENTTOTALCOUNT)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_COMPLETIONSTATUS)),
-                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CUSTOMSORTINDEX)));
+                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CUSTOMSORTINDEX)),
+                                curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_CONTROLLERSUPPORT)));
 
             gameArray.add(gameTemp);
 
@@ -369,6 +373,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_ACHIEVEMENTSFINISHEDCOUNT, game.getAchievementsFinishedCount());
         values.put(KEY_ACHIEVEMENTTOTALCOUNT, game.getAchievementsTotalCount());
 
+
         // Which row to update, based on the ID
         String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + game.getPlatformID();
 
@@ -401,6 +406,26 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
         if(count == 0){
            // Log.e("","ERROR SAVING LOGO");
+        }
+    }
+    public void setGameControllerSupport(Game game){
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // New value for one column
+        ContentValues values = new ContentValues();
+        values.put(KEY_CONTROLLERSUPPORT, game.getControllerSupport());
+
+        // Which row to update, based on the ID
+        String selection = KEY_NAME + "=" + '"' + game.getName() + '"' + " AND " + KEY_PLATFORMID + "=" + game.getPlatformID();
+
+        int count = db.update(
+                TABLE_GAMES,
+                values,
+                selection,
+                null);
+
+        if(count == 0){
+            // Log.e("","ERROR SAVING ACHIEVEMENTS");
         }
     }
     public void setGameCustomSortTypeIndex(Game game){

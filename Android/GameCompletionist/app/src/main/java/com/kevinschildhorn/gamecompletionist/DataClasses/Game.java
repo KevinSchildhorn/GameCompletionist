@@ -27,13 +27,15 @@ public class Game {
     private int recentMinutesPlayed;  // DONE - requestGameInfo/requestRecentGames
     private int achievementsFinishedCount;       // DONE - requestAchievements
     private int achievementsTotalCount;       // DONE - requestAchievements
-
+    private int controllerSupport;
 
     public int completionStatus;
     public int customSortTypeIndex;
 
 
-    public Game (int id, String name, int platformID,String logoURL, byte[] logo,int minutesPlayed, int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount, int completionStatus,int customSortTypeIndex){
+    public Game (int id, String name, int platformID,String logoURL, byte[] logo,int minutesPlayed,
+                 int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount,
+                 int completionStatus,int customSortTypeIndex,int controllerSupport){
         // initialize
         this.id = id;
         this.name = name;
@@ -69,6 +71,7 @@ public class Game {
         }
         this.completionStatus = completionStatus;
         this.customSortTypeIndex = customSortTypeIndex;
+        this.controllerSupport = controllerSupport;
     }
 
     // Getters
@@ -108,7 +111,9 @@ public class Game {
     public int getAchievementsTotalCount(){
         return this.achievementsTotalCount;
     }
-
+    public int getControllerSupport(){
+        return this.controllerSupport;
+    }
 
     public void setAchievements(JSONArray achievements) throws JSONException {
         this.achievementsFinishedCount = 0;
@@ -128,5 +133,8 @@ public class Game {
     }
     public void setLogo(Bitmap logo){
         this.logo = logo;
+    }
+    public void setControllerSupport(int controllerSupport){
+        this.controllerSupport = controllerSupport;
     }
 }

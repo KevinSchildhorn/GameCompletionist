@@ -5,6 +5,10 @@
     <integer name="finished">2</integer>
     <integer name="complete">3</integer>
 
+    <integer name="noControllerSupport">0</integer>
+    <integer name="partialControllerSupport">1</integer>
+    <integer name="fullControllerSupport">2</integer>
+
     <integer name="name">0</integer>
     <integer name="hoursPlayed">1</integer>
     <integer name="recentlyPlayed">2</integer>

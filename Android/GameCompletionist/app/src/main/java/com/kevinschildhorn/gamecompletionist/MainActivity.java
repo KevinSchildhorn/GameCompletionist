@@ -314,15 +314,5 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
         }
     }
 
-    @Override
-    public void onOnUpdatedAchievements(int finishedCount, int totalCount) {
-        platformState = DOWNLOADSFINISHED;
-        mCurrentTabFragment.setPlatformState(platformState);
-        String loadingInfo = null;
-        if(finishedCount != totalCount) {
-            loadingInfo = finishedCount + "/" + totalCount + " achievements loaded";
-        }
-        mCurrentTabFragment.setLoadingInfo(loadingInfo);
-    }
     //endregion
 }

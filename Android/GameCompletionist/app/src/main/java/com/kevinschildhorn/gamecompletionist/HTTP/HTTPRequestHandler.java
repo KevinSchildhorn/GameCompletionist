@@ -108,7 +108,42 @@ public class HTTPRequestHandler{
         }
     }
 
-
+    public void requestGameControllerSupport(Platform platform,int index){
+        String requestURI = String.format(  "http://store.steampowered.com/api/appdetails/?appids=%s&filters=categories",
+                platform.getGameAtIndex(index).getID());
+        //if(isConnected()) {
+        JSONObject steamJSON = sendRequest(requestURI);
+        if(steamJSON != null) {
+            try {
+                if (steamJSON.has(platform.getGameAtIndex(index).getID() + "")) {
+                    steamJSON = steamJSON.getJSONObject(platform.getGameAtIndex(index).getID() + "");
+                    if (steamJSON.has("data")) {
+                        steamJSON = steamJSON.getJSONObject("data");
+                        if (steamJSON.has("categories")) {
+                            JSONArray categories = steamJSON.getJSONArray("categories");
+                            for(int i=0;i<categories.length();i++){
+                                steamJSON = categories.getJSONObject(i);
+                                if (steamJSON.has("id")) {
+                                    if(steamJSON.getInt("id") == 18){
+                                        // Partial Controller Support
+                                        platform.getGameAtIndex(index).setControllerSupport(1);
+                                        return;
+                                    }
+                                    else if(steamJSON.getInt("id") == 28){
+                                        // full controller support
+                                        platform.getGameAtIndex(index).setControllerSupport(2);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     // Processing
 

@@ -101,6 +101,18 @@ public class Platform {
             games[index].setLogo(null);
         }
     }
+
+    public void updateGameControllerSupportAtIndex(int index,HTTPRequestHandler requestHandler,SQLiteHelper db){
+        requestHandler.requestGameControllerSupport(this,index);
+        db.setGameControllerSupport(games[index]);
+        if (games[index].getLogo() != null && !games[index].getLogo().isRecycled()) {
+            games[index].getLogo().recycle();
+            games[index].setLogo(null);
+        }
+    }
+
+
+
     // Getters
 
     // Checks if name already exists in database and if so returns a custom one
@@ -186,7 +198,8 @@ public class Platform {
                         -1,                                         // AchievementsFinishedCount
                         -1,                                         // AchievementsTotalCount
                         0,                                          // CompletionStatus
-                        -1);                                        // CustomSortIndex
+                        -1,                                         // CustomSortIndex
+                        0);                                         // ControllerSupport
 
                 for (int j=0;j<oldGames.length;j++){
                     if(gameTemp.getName() != oldGames[j].getName()){
