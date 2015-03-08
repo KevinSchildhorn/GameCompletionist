@@ -15,4 +15,7 @@
     <integer name="achievementsEarned">3</integer>
     <integer name="customOrder">4</integer>
 
+    <integer name="steam">1</integer>
+    <integer name="gog">2</integer>
+
 </resources>

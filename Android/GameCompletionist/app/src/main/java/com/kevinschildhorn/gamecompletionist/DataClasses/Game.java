@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 
 public class Game {
     private int id;                     // DONE - requestGameInfo
+    private String idString;
     private String name;                // DONE - requestGameInfo
     private int platformID;             // DONE - parent
     private String logoURL;             // DONE - requestGameInfo
@@ -33,11 +34,12 @@ public class Game {
     public int customSortTypeIndex;
 
 
-    public Game (int id, String name, int platformID,String logoURL, byte[] logo,int minutesPlayed,
+    public Game (int id, String idString, String name, int platformID,String logoURL, byte[] logo,int minutesPlayed,
                  int recentMinutesPlayed,int achievementsFinishedCount,int achievementsTotalCount,
                  int completionStatus,int customSortTypeIndex,int controllerSupport){
         // initialize
         this.id = id;
+        this.idString = idString;
         this.name = name;
         if(this.name.startsWith("The ")){
             this.name = this.name.substring(4) + ", The";
@@ -74,11 +76,17 @@ public class Game {
         this.controllerSupport = controllerSupport;
     }
 
+    public Game(String id,String title,String logoURL){
+        this.idString = id;
+        this.name = title;
+        this.logoURL = logoURL;
+    }
     // Getters
 
     public int getID(){
         return this.id;
     }
+    public String getIdString(){ return this.idString;}
     public String getName(){
         return this.name;
     }

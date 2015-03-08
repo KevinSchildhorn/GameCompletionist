@@ -26,15 +26,18 @@ public class SQLiteHelper extends SQLiteOpenHelper{
     private static final String DATABASE_NAME = "games.db";
     private static final int DATABASE_VERSION = 1;
 
-
+    // platforms
     public static final String TABLE_PLATFORM = "Platforms";
     public static final String KEY_ID = "id";
     public static final String KEY_NAME = "Name";
     public static final String KEY_LOGIN = "Login";
+    public static final String KEY_PASSWORD = "Password";
     public static final String KEY_TYPEID = "TypeID";
     public static final String KEY_APIKEY = "APIkey";
 
+    // games
     public static final String TABLE_GAMES= "Games";
+    public static final String KEY_ID_STRING = "idString";
     public static final String KEY_PLATFORMID = "PlatformID";
     public static final String KEY_LOGOURL = "LogoUrl";
     public static final String KEY_LOGO = "Logo";
@@ -68,12 +71,14 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_ID + " INTEGER PRIMARY KEY," +
                 KEY_NAME + " TEXT," +
                 KEY_LOGIN + " TEXT," +
+                KEY_PASSWORD + " TEXT, " +
                 KEY_TYPEID + " INT," +
                 KEY_APIKEY + " TEXT" +
                 ")";
 
         String CREATE_GAMES_TABLE = "CREATE TABLE " + TABLE_GAMES + "(" +
                 KEY_ID + " INTEGER PRIMARY KEY," +
+                KEY_ID_STRING + " TEXT," +
                 KEY_NAME + " TEXT," +
                 KEY_PLATFORMID + " INT," +
                 KEY_LOGOURL + " TEXT," +
@@ -111,6 +116,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
         values.put(KEY_ID, platform.getID());
         values.put(KEY_NAME,platform.getName());
         values.put(KEY_LOGIN, platform.getLogin());
+        values.put(KEY_PASSWORD, platform.getPassword());
         values.put(KEY_TYPEID, platform.getTypeID());
         values.put(KEY_APIKEY, platform.getAPIkey());
 
@@ -144,6 +150,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
                 KEY_ID,
                 KEY_NAME,
                 KEY_LOGIN,
+                KEY_PASSWORD,
                 KEY_TYPEID,
                 KEY_APIKEY
         };
@@ -176,6 +183,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
             platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGIN)),
+                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_PASSWORD)),
                     curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_TYPEID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_APIKEY)),
                     gamesTemp);
@@ -198,6 +206,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
             platformTemp = new Platform(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGIN)),
+                    curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_PASSWORD)),
                     curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_TYPEID)),
                     curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_APIKEY)),
                     gamesTemp);
@@ -233,7 +242,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
 
         ContentValues values = new ContentValues();
-        //values.put(KEY_ID, game.id);
+        values.put(KEY_ID_STRING, game.getIdString());
         values.put(KEY_NAME, game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
         values.put(KEY_LOGOURL, game.getLogoURL());
@@ -252,6 +261,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
         String[] columns = {
                 KEY_ID,
+                KEY_ID_STRING,
                 KEY_NAME,
                 KEY_PLATFORMID,
                 KEY_LOGOURL,
@@ -320,6 +330,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
 
             gameTemp = new Game(curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID)),
+                                curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_ID_STRING)),
                                 curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_NAME)),
                                 curTemp.getInt(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_PLATFORMID)),
                                 curTemp.getString(curTemp.getColumnIndexOrThrow(SQLiteHelper.KEY_LOGOURL)),
@@ -343,7 +354,7 @@ public class SQLiteHelper extends SQLiteOpenHelper{
 
         // New value for one column
         ContentValues values = new ContentValues();
-        //values.put(KEY_ID, game.id);
+        values.put(KEY_ID_STRING, game.getIdString());
         values.put(KEY_NAME,game.getName());
         values.put(KEY_PLATFORMID, game.getPlatformID());
         values.put(KEY_LOGOURL,game.getLogoURL());

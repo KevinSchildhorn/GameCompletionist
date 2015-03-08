@@ -185,10 +185,18 @@ public class MainActivity extends Activity  implements  NavigationDrawerFragment
     }
 
     @Override
-    public void requestNewPlatform(int platformType, String text) {
+    public void requestNewPlatform(int platformType, String username) {
         platformState = DOWNLOADINGPLATFORMS;
         mCurrentTabFragment.setPlatformState(platformState);
-        mPlatformHandler.RequestNewPlatformFromServer(platformType,text);
+        mPlatformHandler.RequestNewPlatformFromServer(platformType,username);
+        mCurrentTabFragment.setLoadingScreen(true);
+    }
+
+    @Override
+    public void requestNewPlatform(int platformType, String username, String password) {
+        platformState = DOWNLOADINGPLATFORMS;
+        mCurrentTabFragment.setPlatformState(platformState);
+        mPlatformHandler.RequestNewPlatformFromServer(platformType,username,password);
         mCurrentTabFragment.setLoadingScreen(true);
     }
 

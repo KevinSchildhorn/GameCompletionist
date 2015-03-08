@@ -3,6 +3,7 @@ package com.kevinschildhorn.gamecompletionist.DataClasses;
 import android.content.Context;
 
 import com.kevinschildhorn.gamecompletionist.HTTP.HTTPRequestHandler;
+import com.kevinschildhorn.gamecompletionist.R;
 import com.kevinschildhorn.gamecompletionist.SQLiteHelper;
 
 
@@ -11,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -26,13 +28,14 @@ public class Platform {
     private int id;
     private String name;
     private String login;
+    private String password;
     private int typeID;
     private String APIkey;
     private Game[] games;
 
 
     // New Platform
-    public Platform ( int incomingID, int incomingType,String incomingLogin){
+    public Platform ( int incomingID, int incomingType,String incomingLogin,String incomingPassword){
         // initialize
         this.id = incomingID;
         this.login = incomingLogin;
@@ -40,18 +43,26 @@ public class Platform {
         this.games = new Game[0];
         // initialize based on platform type
         switch (this.typeID) {
-            case 1:
+            case R.integer.steam:
+            default:
                 this.name = "Steam";
                 this.APIkey = "B6D54D6EBCF3A1A320644C485ACD1A6F";
                 break;
+
+            case R.integer.gog:
+                this.name = "GoG";
+                this.password = incomingPassword;
+                break;
+
         }
     }
     // New Platform From Database
-    public Platform (int incomingID, String incomingName, String incomingLogin, int incomingType,String incomingAPIkey,ArrayList<Game> games){
+    public Platform (int incomingID, String incomingName, String incomingLogin, String incomingPassword, int incomingType,String incomingAPIkey,ArrayList<Game> games){
         // initialize
         this.id = incomingID;
         this.name = incomingName;
         this.login = incomingLogin;
+        this.password = incomingPassword;
         this.typeID = incomingType;
         this.APIkey = incomingAPIkey;
 
@@ -63,7 +74,15 @@ public class Platform {
     public void addInformationFromServer(HTTPRequestHandler requestHandler,SQLiteHelper db){
         try {
             this.name = this.name + "_" + this.login;
-            this.login = requestHandler.requestSteamID(this);
+            switch(this.typeID) {
+                case R.integer.steam:
+                    default:
+                        this.login = requestHandler.requestSteamID(this);
+                    break;
+                case R.integer.gog:
+                    break;
+
+            }
             updateGamesList(requestHandler,db);
         } catch (JSONException e) {
             e.printStackTrace();
@@ -75,19 +94,48 @@ public class Platform {
     }
 
     public ArrayList<Game> updateGamesList(HTTPRequestHandler requestHandler,SQLiteHelper db){
-        try {
-            JSONObject gameListJSON = requestHandler.requestGameList(this);
-            return parseAndAddGameList(gameListJSON,db);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        switch(this.typeID){
+            case R.integer.steam:
+            default:
+                try {
+                    JSONObject gameListJSON = requestHandler.requestGameList(this);
+                    return parseAndAddGameList(gameListJSON,db);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            case R.integer.gog:
+                //return getGoGGames(db);
+                break;
+
         }
+
         return new ArrayList<Game>();
     }
+/*
+    public ArrayList<Game> getGoGGames(SQLiteHelper db){
+        GogApi api = new GogApi();
+        api.login(this.login, this.password);
+        List<GogGame> gogGames = api.listGames();
 
+        ArrayList<Game> games = new ArrayList<Game>();
+        DetailedGogGame gameDetails;
+        Game tempGame;
+        for(int i=0;i<gogGames.size();i++){
+            gameDetails = api.loadDetails(gogGames.get(i));
+            tempGame = new Game(gameDetails.getId(),gameDetails.getTitle(),gogGames.get(i).getCoverUrl());
+            games.add(tempGame);
+            db.addGame(tempGame);
+        }
+        db.addPlatform(this);
+        return games;
+    }
+*/
 
     public void updateGameAchievementAtIndex(int index,HTTPRequestHandler requestHandler,SQLiteHelper db){
         requestHandler.requestGameAchievements(this,index);
@@ -131,6 +179,7 @@ public class Platform {
     public String getLogin(){
         return  this.login;
     }
+    public String getPassword() {return this.login; }
     public int getTypeID(){
         return  this.typeID;
     }
@@ -189,6 +238,7 @@ public class Platform {
                 }
 
                 gameTemp = new Game(gameInfoTemp.getInt("appid"),               // ID
+                        "",
                         gameInfoTemp.getString("name"),             // Name
                         this.id,                                    // platformID
                         gameInfoTemp.getString("img_logo_url"),     // LogoURL
@@ -202,7 +252,7 @@ public class Platform {
                         0);                                         // ControllerSupport
 
                 for (int j=0;j<oldGames.length;j++){
-                    if(gameTemp.getName() != oldGames[j].getName()){
+                    if(gameTemp.getName().equals(oldGames[j].getName()) == false){
                         updatedGames.add(gameTemp);
                     }
                 }

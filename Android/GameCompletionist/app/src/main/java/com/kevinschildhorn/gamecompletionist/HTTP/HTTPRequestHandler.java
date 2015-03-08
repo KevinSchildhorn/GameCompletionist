@@ -11,6 +11,7 @@ import android.util.Log;
 
 import com.kevinschildhorn.gamecompletionist.DataClasses.Game;
 import com.kevinschildhorn.gamecompletionist.DataClasses.Platform;
+import com.kevinschildhorn.gamecompletionist.R;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -42,11 +43,27 @@ public class HTTPRequestHandler{
 
     // Requests
 
+    public JSONObject requestGoGGameList(Platform platform) throws JSONException, ExecutionException, InterruptedException {
+        String requestURI = "";
+
+        switch (platform.getTypeID()){
+            case R.integer.steam: //Steam
+            default:
+                requestURI = String.format("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=%s&steamid=%s&include_appinfo=1&include_played_free_games=1&format=json",platform.getAPIkey(),platform.getLogin());
+                break;
+        }
+        //if(isConnected()) {
+        JSONObject gameListJSON = sendRequest(requestURI);
+        //JSONObject gameListJSON = new HttpAsyncTask().execute(requestURI).get();
+        return gameListJSON.getJSONObject("response");
+        //}
+    }
     public JSONObject requestGameList(Platform platform) throws JSONException, ExecutionException, InterruptedException {
         String requestURI = "";
 
         switch (platform.getTypeID()){
-            case 1: //Steam
+            case R.integer.steam: //Steam
+            default:
                 requestURI = String.format("http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=%s&steamid=%s&include_appinfo=1&include_played_free_games=1&format=json",platform.getAPIkey(),platform.getLogin());
                 break;
         }

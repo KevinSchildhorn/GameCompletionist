@@ -320,7 +320,7 @@ public class TabFragment extends Fragment {
             }
             else{
                 SQLiteHelper db = SQLiteHelper.getInstance(getActivity());
-                platform = new Platform(0,"","",0,"",db.getGames(platformID,filterType,sortType,sortDirectionAscending));
+                platform = new Platform(0,"","","",0,"",db.getGames(platformID,filterType,sortType,sortDirectionAscending));
             }
             return platform;
         }

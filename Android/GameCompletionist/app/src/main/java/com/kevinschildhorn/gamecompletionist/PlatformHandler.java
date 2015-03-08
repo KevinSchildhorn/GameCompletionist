@@ -34,7 +34,12 @@ public class PlatformHandler{
 
     // Requests Platform from server, then saves it to database
     public void RequestNewPlatformFromServer(int platformType,String loginName){
-        Platform platform = new Platform(mPlatformCounter,platformType,loginName);
+        Platform platform = new Platform(mPlatformCounter,platformType,loginName,"");
+        new NewPlatformAsyncTask().execute(platform);
+    }
+
+    public void RequestNewPlatformFromServer(int platformType,String loginName, String loginPassword){
+        Platform platform = new Platform(mPlatformCounter,platformType,loginName,loginPassword);
         new NewPlatformAsyncTask().execute(platform);
     }
 

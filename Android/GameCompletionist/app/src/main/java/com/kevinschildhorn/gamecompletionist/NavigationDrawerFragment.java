@@ -28,6 +28,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -231,21 +232,52 @@ public class NavigationDrawerFragment extends Fragment {
                     public void onClick(DialogInterface dialog, final int platformIdx) {
 
                         final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                        builder.setTitle("Enter your Username");
-                        builder.setMessage("http://steamcommunity.com/id/");
-                        builder.setIcon(R.drawable.ic_launcher);
+                        switch (platformIdx+1){
+                            default:
+                            case R.integer.steam:
+                                builder.setTitle("Enter your Username");
+                                builder.setMessage("http://steamcommunity.com/id/");
+                                builder.setIcon(R.drawable.ic_launcher);
 
-                        // Set an EditText view to get user input
-                        final EditText input = new EditText(builder.getContext());
-                        builder.setView(input);
+                                // Set an EditText view to get user input
+                                final EditText input = new EditText(builder.getContext());
+                                builder.setView(input);
 
-                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                // hold as temporary object
-                                mCallbacks.requestNewPlatform(platformIdx+1,input.getText().toString());
-                            }
-                        });
+                                builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton) {
+                                        // hold as temporary object
+                                        mCallbacks.requestNewPlatform(platformIdx+1,input.getText().toString());
+                                    }
+                                });
+                                break;
 
+                            case R.integer.gog:
+                                builder.setTitle("Enter your Username/password");
+                                builder.setIcon(R.drawable.ic_launcher);
+
+                                // Set an EditText view to get user input
+                                Context context = builder.getContext();
+                                LinearLayout layout = new LinearLayout(context);
+                                layout.setOrientation(LinearLayout.VERTICAL);
+
+                                final EditText usernameInput = new EditText(context);
+                                usernameInput.setHint("Username");
+                                layout.addView(usernameInput);
+
+                                final EditText passwordInput = new EditText(context);
+                                passwordInput.setHint("Password");
+                                layout.addView(passwordInput);
+
+                                builder.setView(layout);
+
+                                builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int whichButton) {
+                                        // hold as temporary object
+                                        mCallbacks.requestNewPlatform(platformIdx+1,usernameInput.getText().toString(),passwordInput.getText().toString());
+                                    }
+                                });
+                                break;
+                        }
                         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                             }
@@ -423,7 +455,8 @@ public class NavigationDrawerFragment extends Fragment {
         void onSortDirectionSelected(boolean sortAsc);
         void onPlatformDeleteSelected();
         void onPlatformRenameSelected();
-        void requestNewPlatform(int platformType,String text);
+        void requestNewPlatform(int platformType,String username);
+        void requestNewPlatform(int platformType,String username,String password);
         void onEditSelected();
     }
 }
